@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ルート疲労度プランナー</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>ルート疲労度プランナー</h1>
+    <div class="weightField">
+      体重
+      <input type="number" id="weightInput" min="20" max="200" step="0.1" value="60" />
+      kg
+    </div>
+  </header>
+  <div id="main">
+    <div id="mapWrap">
+      <div id="map"></div>
+      <div id="loading">計算中です．しばらくお待ちください．</div>
+      <div id="errorBox"></div>
+      <div id="profileWrap">
+        <div class="ptitle">標高断面図</div>
+        <svg id="profileSvg" width="100%" height="90" viewBox="0 0 600 90" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+    <div id="side">
+      <div id="sideHeader">保存したルート</div>
+      <div id="routeList"><div class="empty">まだ保存されたルートはありません．</div></div>
+    </div>
+  </div>
+  <div id="controls">
+    <button id="startBtn">出発地点を選ぶ</button>
+    <button id="finishDrawBtn" disabled>経路を確定する</button>
+    <button id="clearBtn" class="secondary" disabled>やり直す</button>
+    <button id="saveBtn" class="secondary" disabled>このルートを保存する</button>
+    <span id="hint">「出発地点を選ぶ」を押してから地図をクリックしてください．</span>
+    <div id="statbox"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
