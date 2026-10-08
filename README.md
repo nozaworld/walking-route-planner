@@ -14,6 +14,7 @@
 
 ## 主な機能
 
+- **地名検索**：地名・駅名・施設名で探すと，その場所へ地図が移動します．今見ている地域の近くの候補を先に並べます．
 - **ルートを描く**：地図をクリックして経由点を打つと，道路に沿った徒歩ルートに変換します（OpenRouteService）．打ち間違えた点は「ひとつ戻す」で取り消せます．
 - **手順の案内**：「一 出発地点 → 二 道をたどる → 三 確定」のどこにいるかを示し，その段階で押すボタンだけを出します．
 - **標高断面図**：国土地理院の標高データから，ルートの起伏を断面図で表示します．カーソルを合わせた地点の距離と標高がわかります．
@@ -21,6 +22,8 @@
 - **体重を反映**：体重を変えると，通信せずにその場で計算し直します．
 - **ルートの保存**：名前を付けてブラウザに保存し，一覧からいつでも表示・削除できます．
 - **和風モダンのデザイン**：生成り・墨・藍・朱の配色，明朝体の数字，青海波の文様．暗い表示にも対応します．
+- **滑らかな拡大縮小**：ホイールやピンチに合わせて，地図が段階的ではなく連続的に拡大縮小します．
+- **パネルの大きさを変更**：操作パネルの端をドラッグすると，幅（PC）や高さ（スマホ）を変えられます．大きさは次回も保たれます．
 - **スマホ対応**：PC では操作パネルを地図の左に，スマホでは下に重ねます．
 
 ## 計算モデル
@@ -43,7 +46,7 @@
 | UI | Tailwind CSS v4，shadcn/ui（Base UI），lucide-react，sonner，next-themes |
 | フォント | Zen Kaku Gothic New（本文），しっぽり明朝（見出し・数字） |
 | 地図 | Leaflet，react-leaflet，国土地理院 淡色地図 |
-| 外部 API | OpenRouteService（徒歩ルート），国土地理院 標高 API |
+| 外部 API | OpenRouteService（徒歩ルート・地名検索），国土地理院 標高 API |
 | 入力検証 | zod |
 | テスト | Vitest（ユニット），Playwright（E2E） |
 | Lint・整形 | Biome |
@@ -68,13 +71,14 @@ API キーはサーバー側の Route Handler でのみ使い，ブラウザに�
 app/
   page.tsx                  トップページ
   api/plan/route.ts         経路と標高を返す API
+  api/geocode/route.ts      地名検索の API
 components/planner/         画面の部品（地図，操作パネル，手順の案内，統計，断面図，保存一覧，保存ダイアログ）
 lib/
   geo.ts                    距離計算と点列の間引き
   energy-model.ts           エネルギー・速度モデルと統計の計算
-  plan.ts                   API の入出力の型と検証スキーマ
+  plan.ts，geocode.ts       API の入出力の型と検証スキーマ
   storage.ts                localStorage への保存
-  server/                   OpenRouteService と国土地理院の呼び出し（サーバー専用）
+  server/                   OpenRouteService（経路・地名検索）と国土地理院の呼び出し（サーバー専用）
 tests/                      Playwright の E2E テスト
 .github/workflows/ci.yml    CI（GitHub Actions）
 docs/design.md              設計書
@@ -94,7 +98,7 @@ npm run dev            # http://localhost:3000
 
 | 変数 | 必須 | 説明 |
 |---|---|---|
-| `ORS_API_KEY` | ✅ | [OpenRouteService](https://openrouteservice.org/) の API キー．無料枠は経路探索 2,000回/日 |
+| `ORS_API_KEY` | ✅ | [OpenRouteService](https://openrouteservice.org/) の API キー．無料枠は経路探索 2,000回/日，地名検索 1,000回/日（1回の検索で「近く」と「全国」の2回分を使う） |
 | `DATABASE_URL` | | Postgres の接続先（ログイン・DB 保存の実装後に使う） |
 | `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | | 認証の設定（同上） |
 
