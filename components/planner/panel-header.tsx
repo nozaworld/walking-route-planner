@@ -4,6 +4,9 @@
  * 青海波の文様を薄く敷いた帯の上に並べる．
  */
 
+import { CompassIcon } from "lucide-react";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { AccountMenu } from "./account-menu";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -32,6 +35,14 @@ export function PanelHeader({ onLoginClick }: { onLoginClick: () => void }) {
 					</p>
 				</div>
 				<div className="flex shrink-0 items-center gap-1">
+					<Link
+						href="/explore"
+						aria-label="みんなのルート"
+						title="みんなのルート"
+						className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+					>
+						<CompassIcon />
+					</Link>
 					<ThemeToggle />
 					<AccountMenu onLoginClick={onLoginClick} />
 				</div>
