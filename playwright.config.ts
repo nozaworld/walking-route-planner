@@ -1,6 +1,6 @@
 /**
  * Playwright（E2E テスト）の設定．
- * テスト用のサーバーを自動で立ち上げる．CI では本番ビルドで，手元では開発サーバーで動かす．
+ * テスト用のサーバーを自動で立ち上げる．CI では事前にビルドした本番サーバーで，手元では開発サーバーで動かす．
  */
 import { defineConfig, devices } from "@playwright/test";
 
@@ -80,7 +80,7 @@ export default defineConfig({
 	/* Run your local dev server before starting the tests */
 	webServer: {
 		command: process.env.CI
-			? `npm run build && npm run start -- -p ${PORT}`
+			? `npm run start -- -p ${PORT}` // ビルドは CI の手前の手順で済ませておく
 			: `npm run dev -- -p ${PORT}`,
 		url: `http://localhost:${PORT}`,
 		reuseExistingServer: !process.env.CI,

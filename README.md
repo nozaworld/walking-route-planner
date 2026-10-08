@@ -1,5 +1,7 @@
 # ルート疲労度プランナー
 
+[![CI](https://github.com/nozaworld/walking-route-planner/actions/workflows/ci.yml/badge.svg)](https://github.com/nozaworld/walking-route-planner/actions/workflows/ci.yml)
+
 地図上をクリックして描いた徒歩ルートについて，**距離・獲得標高・所要時間・消費カロリー**を，坂の勾配を考慮して見積もる Web アプリです．
 
 ![画面のスクリーンショット](docs/screenshot.png)
@@ -36,6 +38,7 @@
 | 入力検証 | zod |
 | テスト | Vitest（ユニット），Playwright（E2E） |
 | Lint・整形 | Biome |
+| CI | GitHub Actions |
 | 公開 | Vercel |
 
 ### 処理の流れ
@@ -64,6 +67,7 @@ lib/
   storage.ts                localStorage への保存
   server/                   OpenRouteService と国土地理院の呼び出し（サーバー専用）
 tests/                      Playwright の E2E テスト
+.github/workflows/ci.yml    CI（GitHub Actions）
 docs/design.md              設計書
 ```
 
@@ -94,6 +98,18 @@ npm run dev            # http://localhost:3000
 | `npm test` | Vitest でユニットテスト |
 | `npm run e2e` | Playwright で E2E テスト（API は差し替えるのでキー不要） |
 | `npm run lint` / `npm run format` | Biome でチェック・整形 |
+| `npm run typecheck` | TypeScript の型チェック |
+
+## CI
+
+`main` への push とプルリクエストごとに，GitHub Actions（`.github/workflows/ci.yml`）で次を確かめます．
+
+| ジョブ | 内容 |
+|---|---|
+| Lint・型チェック・ユニットテスト | `biome ci`，`tsc --noEmit`，`vitest run` |
+| ビルド・E2E テスト | `next build` のあと，本番サーバーに対して Playwright で Chromium・Firefox・WebKit のテスト |
+
+E2E テストでは経路計算 API の応答を差し替えるので，CI に API キーを登録する必要はありません．
 
 ## 旧版からの改善
 
