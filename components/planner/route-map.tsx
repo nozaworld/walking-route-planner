@@ -2,7 +2,8 @@
 
 /**
  * 画面いっぱいに広げる地図（MapLibre GL）．
- * 国土地理院の淡色地図の上に，経由点・確定前の仮の線・確定したルート・検索した場所を描き，
+ * 国土地理院の淡色地図の上に，経由点・確定前の仮の線・確定したルート（勾配で色分け）・検索した場所・
+ * 断面図でカーソルを合わせた地点を描き，
  * 地図のクリックと中心の位置を親に伝える．
  * MapLibre は GPU で描くので，拡大縮小は連続的に動き，読み込み中も粗いタイルで画面を埋め続ける
  * （Leaflet ではタイルの段階が切り替わるたびに画面が白っぽく抜けていた）．
@@ -20,11 +21,16 @@ import {
 	Source,
 } from "@vis.gl/react-maplibre";
 import type { FeatureCollection, LineString, Point } from "geojson";
-import { type RasterLayerSpecification, setWorkerUrl } from "maplibre-gl";
+import {
+	type ExpressionSpecification,
+	type RasterLayerSpecification,
+	setWorkerUrl,
+} from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 import type { LatLng } from "@/lib/geo";
 import type { Place } from "@/lib/geocode";
+import type { GradeLevel, GradeStop } from "@/lib/grade";
 import type { PanelSize } from "@/lib/storage";
 
 // MapLibre は地図データの処理を Web Worker で行う．Worker のファイルは本体と同じ場所にある前提で
@@ -48,16 +54,21 @@ const ATTRIBUTION = [
 /**
  * 明るい／暗いモードの色．MapLibre は CSS 変数を読めないので，globals.css と同じ値を持つ．
  * route は藍，start は朱，casing は線の縁取り，background はタイルの読み込み前に見える地の色．
+ * moderate・steep は勾配の色分け（やや急は金茶，急は朱）．
  */
 const PALETTE = {
 	light: {
 		route: "#1f3a5f",
+		moderate: "#b8862f",
+		steep: "#c2462d",
 		casing: "#ffffff",
 		start: "#c2462d",
 		background: "#f3eee3",
 	},
 	dark: {
 		route: "#9dbcf0",
+		moderate: "#d8aa55",
+		steep: "#e0674d",
 		casing: "#0d0f11",
 		start: "#e0674d",
 		background: "#151719",
@@ -90,6 +101,10 @@ type Props = {
 	onCenterChange: (center: LatLng) => void;
 	/** 最初に表示する範囲をこのルートに合わせる（共有ページ用．省略すると名古屋付近） */
 	initialRoute?: LatLng[];
+	/** ルートの勾配の段階の切り替わり（ルートの線の色分けに使う） */
+	gradeStops?: GradeStop[];
+	/** 断面図でカーソルを合わせている地点（地図上に点で示す） */
+	highlight?: LatLng | null;
 };
 
 /** 緯度経度の配列を GeoJSON の線にする */
@@ -160,11 +175,31 @@ export default function RouteMap({
 	onMapClick,
 	onCenterChange,
 	initialRoute,
+	gradeStops = [],
+	highlight = null,
 }: Props) {
 	const mapRef = useRef<MapRef>(null);
 	const { resolvedTheme } = useTheme();
 	const dark = resolvedTheme === "dark";
 	const colors = dark ? PALETTE.dark : PALETTE.light;
+
+	// 勾配の段階を色にして，線の始点からの位置（line-progress）で切り替える
+	const levelColor: Record<GradeLevel, string> = {
+		gentle: colors.route,
+		moderate: colors.moderate,
+		steep: colors.steep,
+	};
+	const [first, ...rest] = gradeStops;
+	const lineGradient = [
+		"step",
+		["line-progress"],
+		levelColor[first?.level ?? "gentle"],
+		...rest.flatMap((s) => [s.at, levelColor[s.level]]),
+		// step は区切りが1つ以上必要なので，最後の色のまま終わる区切りを末尾に必ず足す
+		1,
+		levelColor[gradeStops.at(-1)?.level ?? "gentle"],
+		// 段階の数で長さが変わる配列なので，式の型として扱うよう明示する
+	] as ExpressionSpecification;
 
 	// fitKey が変わったら，ルート全体が見えるよう表示範囲をなめらかに合わせる
 	// biome-ignore lint/correctness/useExhaustiveDependencies: fitKey が変わったときだけ合わせ直す（route の参照の変化では動かさない）
@@ -250,7 +285,8 @@ export default function RouteMap({
 				<Layer id="pale" type="raster" paint={tilePaint} />
 			</Source>
 
-			<Source id="route" type="geojson" data={toLine(route ?? [])}>
+			{/* line-gradient を使うには，線の始点からの位置（lineMetrics）が要る */}
+			<Source id="route" type="geojson" data={toLine(route ?? [])} lineMetrics>
 				<Layer
 					id="route-casing"
 					type="line"
@@ -265,7 +301,10 @@ export default function RouteMap({
 					id="route-line"
 					type="line"
 					layout={{ "line-join": "round", "line-cap": "round" }}
-					paint={{ "line-color": colors.route, "line-width": 5 }}
+					paint={{
+						"line-gradient": lineGradient,
+						"line-width": 5,
+					}}
 				/>
 			</Source>
 
@@ -298,6 +337,24 @@ export default function RouteMap({
 						],
 						"circle-stroke-color": colors.casing,
 						"circle-stroke-width": 2,
+					}}
+				/>
+			</Source>
+
+			{/* 断面図でカーソルを合わせている地点 */}
+			<Source
+				id="highlight"
+				type="geojson"
+				data={toPoints(highlight ? [highlight] : [])}
+			>
+				<Layer
+					id="highlight"
+					type="circle"
+					paint={{
+						"circle-radius": 7,
+						"circle-color": colors.start,
+						"circle-stroke-color": colors.casing,
+						"circle-stroke-width": 3,
 					}}
 				/>
 			</Source>

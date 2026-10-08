@@ -3,11 +3,13 @@
 /**
  * 標高断面図．
  * 横軸に始点からの距離，縦軸に標高をとった SVG を，操作パネルの中に表示する．
- * カーソル（スマホでは指）を合わせた地点の距離と標高を見出しに出す．
+ * 線は勾配の段階（lib/grade.ts）で色分けし，凡例を付ける．
+ * カーソル（スマホでは指）を合わせた地点の距離と標高を見出しに出し，その地点を親に伝える（地図にも示す）．
  */
 
 import { useId, useState } from "react";
 import { cumulativeDistances, type LatLng } from "@/lib/geo";
+import { GRADE_LABELS, type GradeLevel, gradeLevel } from "@/lib/grade";
 
 /** SVG の座標系の大きさ（表示時は横幅いっぱいに伸ばす） */
 const W = 600;
@@ -15,19 +17,32 @@ const H = 90;
 /** 線が上下の端に張り付かないための余白 */
 const PAD_T = 6;
 const PAD_B = 14;
-/** 線の色は地図のルートと同じ（globals.css の --route） */
+/** 塗りの色は地図のルートと同じ（globals.css の --route） */
 const COLOR = "var(--route)";
+/** 勾配の段階ごとの線の色（地図の PALETTE と同じ色を CSS 変数で指す） */
+const LEVEL_COLOR: Record<GradeLevel, string> = {
+	gentle: "var(--route)",
+	moderate: "var(--grade-moderate)",
+	steep: "var(--shu)",
+};
 
 type Props = {
 	points: LatLng[];
 	/** points と同じ長さの標高 [m] */
 	elevs: number[];
+	/** カーソルを合わせた地点が変わったとき（離れたら null）に呼ばれる */
+	onHoverChange?: (point: LatLng | null) => void;
 };
 
 /** 点列と標高から断面図を描く．2点未満なら何も描かない */
-export function ElevationProfile({ points, elevs }: Props) {
+export function ElevationProfile({ points, elevs, onHoverChange }: Props) {
 	// カーソルに最も近い点の添字（合わせていなければ null）
-	const [hover, setHover] = useState<number | null>(null);
+	const [hover, setHoverIndex] = useState<number | null>(null);
+	/** 合わせている点を変え，親にもその地点を伝える */
+	const setHover = (i: number | null) => {
+		setHoverIndex(i);
+		onHoverChange?.(i === null ? null : points[i]);
+	};
 	// 同じ画面に複数置いても塗りのグラデーションの id がぶつからないようにする
 	const gradientId = useId();
 
@@ -49,6 +64,15 @@ export function ElevationProfile({ points, elevs }: Props) {
 		.map((d, i) => `${i === 0 ? "M" : "L"} ${x(d)} ${y(elevs[i])}`)
 		.join(" ");
 	const area = `${line} L ${x(total)} ${H - PAD_B} L 0 ${H - PAD_B} Z`;
+	// 区間ごとに勾配の段階を決め，線を色分けして描く
+	const segments = cum.slice(0, -1).map((d, i) => {
+		const dist = cum[i + 1] - d;
+		const grade = dist > 0 ? (elevs[i + 1] - elevs[i]) / dist : 0;
+		return {
+			d: `M ${x(d)} ${y(elevs[i])} L ${x(cum[i + 1])} ${y(elevs[i + 1])}`,
+			level: gradeLevel(grade),
+		};
+	});
 
 	/** カーソルの横位置から，最も近い点を探して hover にする */
 	function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -122,14 +146,20 @@ export function ElevationProfile({ points, elevs }: Props) {
 						</linearGradient>
 					</defs>
 					<path d={area} fill={`url(#${gradientId})`} />
-					<path
-						d={line}
-						fill="none"
-						style={{ stroke: COLOR }}
-						strokeWidth={2}
-						// 横に引き伸ばしても線の太さを保つ
-						vectorEffect="non-scaling-stroke"
-					/>
+					{segments.map((seg, i) => (
+						<path
+							// 区間は並び順で決まり入れ替わらないので，添字で一意になる
+							// biome-ignore lint/suspicious/noArrayIndexKey: 上記の理由
+							key={i}
+							d={seg.d}
+							fill="none"
+							style={{ stroke: LEVEL_COLOR[seg.level] }}
+							strokeWidth={2.5}
+							strokeLinecap="round"
+							// 横に引き伸ばしても線の太さを保つ
+							vectorEffect="non-scaling-stroke"
+						/>
+					))}
 				</svg>
 				{marker && (
 					<>
@@ -149,6 +179,19 @@ export function ElevationProfile({ points, elevs }: Props) {
 			<div className="flex justify-between text-[10px] text-muted-foreground">
 				<span>最低 {Math.round(minE)} m</span>
 				<span>最高 {Math.round(maxE)} m</span>
+			</div>
+			{/* 勾配の凡例 */}
+			<div className="mt-1 flex justify-end gap-3 text-[10px] text-muted-foreground">
+				{(Object.keys(GRADE_LABELS) as GradeLevel[]).map((level) => (
+					<span key={level} className="flex items-center gap-1">
+						<span
+							aria-hidden
+							className="h-1 w-3 rounded-full"
+							style={{ backgroundColor: LEVEL_COLOR[level] }}
+						/>
+						{GRADE_LABELS[level]}
+					</span>
+				))}
 			</div>
 		</div>
 	);

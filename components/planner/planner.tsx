@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
 import type { Place } from "@/lib/geocode";
+import { gradeStops } from "@/lib/grade";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
 import {
 	loadPanelSize,
@@ -75,6 +76,8 @@ export function Planner() {
 	const [place, setPlace] = useState<(Place & { key: number }) | null>(null);
 	// 地図の中心（検索で近い候補を優先するのに使う．描画には使わないので ref）
 	const mapCenter = useRef<LatLng | null>(null);
+	// 断面図でカーソルを合わせている地点（地図にも点で示す）
+	const [highlight, setHighlight] = useState<LatLng | null>(null);
 
 	// localStorage はサーバーでは読めないので，表示後に読み込む
 	useEffect(() => {
@@ -96,6 +99,12 @@ export function Planner() {
 		const { points, elevs } = plan.profile;
 		return computeStats(buildSegments(points, elevs), weight);
 	}, [plan, weight]);
+
+	// ルートの線を勾配で色分けするための，段階の切り替わり
+	const stops = useMemo(
+		() => (plan ? gradeStops(plan.profile.points, plan.profile.elevs) : []),
+		[plan],
+	);
 
 	/** すべてを最初の状態に戻す */
 	function reset() {
@@ -223,6 +232,8 @@ export function Planner() {
 				panelSize={panelSize}
 				place={place}
 				drawing={phase === "drawing"}
+				gradeStops={stops}
+				highlight={highlight}
 				onMapClick={handleMapClick}
 				onCenterChange={(c) => {
 					mapCenter.current = c;
@@ -329,6 +340,7 @@ export function Planner() {
 								<ElevationProfile
 									points={plan.profile.points}
 									elevs={plan.profile.elevs}
+									onHoverChange={setHighlight}
 								/>
 							)}
 							<StepGuide

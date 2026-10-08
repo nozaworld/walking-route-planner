@@ -15,6 +15,8 @@ import { StatsSummary } from "@/components/planner/stats-summary";
 import { ThemeToggle } from "@/components/planner/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { buildSegments, computeStats } from "@/lib/energy-model";
+import type { LatLng } from "@/lib/geo";
+import { gradeStops } from "@/lib/grade";
 import type { CloudRoute } from "@/lib/routes";
 import { loadWeight, type PanelSize } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -40,6 +42,13 @@ function noop() {}
 /** 共有されたルートを表示する */
 export function SharedRoute({ route }: Props) {
 	const [weight, setWeight] = useState(DEFAULT_WEIGHT);
+	// 断面図でカーソルを合わせている地点（地図にも点で示す）
+	const [highlight, setHighlight] = useState<LatLng | null>(null);
+	// ルートの線を勾配で色分けするための，段階の切り替わり
+	const stops = useMemo(
+		() => gradeStops(route.profile.points, route.profile.elevs),
+		[route],
+	);
 
 	// 体重はブラウザにしかないので，表示後に読み込む
 	useEffect(() => {
@@ -77,6 +86,8 @@ export function SharedRoute({ route }: Props) {
 				onMapClick={noop}
 				onCenterChange={noop}
 				initialRoute={route.coords}
+				gradeStops={stops}
+				highlight={highlight}
 			/>
 
 			<aside className="absolute inset-x-0 bottom-0 z-20 flex h-(--panel-h) flex-col overflow-hidden rounded-t-2xl border bg-card/95 shadow-xl backdrop-blur md:inset-y-4 md:right-auto md:left-4 md:h-auto md:w-(--panel-w) md:rounded-2xl">
@@ -127,6 +138,7 @@ export function SharedRoute({ route }: Props) {
 					<ElevationProfile
 						points={route.profile.points}
 						elevs={route.profile.elevs}
+						onHoverChange={setHighlight}
 					/>
 					<p className="text-[11px] text-muted-foreground">
 						消費カロリーは体重 {weight} kg として計算しています．

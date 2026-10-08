@@ -237,9 +237,11 @@
  */
 :root {
 	--route: #1f3a5f;
+	--grade-moderate: #b8862f;
 }
 .dark {
 	--route: #9dbcf0;
+	--grade-moderate: #d8aa55;
 }
 
 /* MapLibre の地図まわりを和風の配色とフォントに合わせる */
