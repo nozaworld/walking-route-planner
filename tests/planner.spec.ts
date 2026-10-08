@@ -237,3 +237,37 @@ test("ログイン中は保存済みルートをクラウドから読み，共�
 		page.getByRole("button", { name: "リンクをコピー" }),
 	).toBeVisible();
 });
+
+test("目標から周回ルートを作ると，目標と実際の値を並べて出す", async ({
+	page,
+}) => {
+	await stubNetwork(page, FAKE_PLAN);
+	let calls = 0;
+	await page.route("**/api/round-trip", (route) => {
+		calls++;
+		return route.fulfill({ json: FAKE_PLAN });
+	});
+
+	await page.getByRole("button", { name: "目標から作る" }).click();
+	await page
+		// トグルの項目は，部品の作りによって radio か button として見えるので，どちらでも押せるようにする
+		.getByRole("radio", { name: "距離" })
+		.or(page.getByRole("button", { name: "距離" }))
+		.click();
+	await page.getByLabel("目標の距離").fill("1.5");
+	// 出発地点を選ぶまでは作れない
+	await expect(
+		page.getByRole("button", { name: "周回ルートを作る" }),
+	).toBeDisabled();
+	await page
+		.locator(".maplibregl-canvas")
+		.click({ position: { x: 700, y: 300 } });
+	await page.getByRole("button", { name: "周回ルートを作る" }).click();
+
+	await expect(page.getByText(/目標 1\.5 km → このルート/)).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "別の候補を作る" }),
+	).toBeVisible();
+	// 架空のルートは約1.4km で目標から15%以内なので，作り直さない
+	expect(calls).toBe(1);
+});

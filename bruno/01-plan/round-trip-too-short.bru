@@ -1,0 +1,33 @@
+meta {
+  name: 周回ルートが短すぎる
+  type: http
+  seq: 4
+}
+
+docs {
+  長さが 500m 未満なら 400（ORS は呼ばない）．
+}
+
+post {
+  url: {{baseUrl}}/api/round-trip
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "start": { "lat": 35.1586, "lng": 136.975 },
+    "length": 100,
+    "seed": 1
+  }
+}
+
+tests {
+  test("400 を返す", function () {
+    expect(res.status).to.equal(400);
+  });
+}

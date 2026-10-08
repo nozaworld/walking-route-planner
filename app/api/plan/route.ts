@@ -12,12 +12,9 @@ import {
 	type PlanResponse,
 	planRequestSchema,
 } from "@/lib/plan";
-import { getElevations } from "@/lib/server/elevation";
 import { ORS_MAX_WAYPOINTS, RoutingError, routeOnFoot } from "@/lib/server/ors";
+import { withProfile } from "@/lib/server/profile";
 import { checkRateLimit, tooManyRequests } from "@/lib/server/rate-limit";
-
-/** 断面図と統計に使う点の数 */
-const PROFILE_SAMPLES = 50;
 
 /** エラーを { error } の形で返す */
 function errorResponse(message: string, status: number) {
@@ -41,12 +38,7 @@ export async function POST(request: Request) {
 	try {
 		const waypoints = downsample(parsed.data.waypoints, ORS_MAX_WAYPOINTS);
 		const { coords } = await routeOnFoot(waypoints);
-		const points = downsample(coords, PROFILE_SAMPLES);
-		const elevs = await getElevations(points);
-		return Response.json({
-			coords,
-			profile: { points, elevs },
-		} satisfies PlanResponse);
+		return Response.json((await withProfile(coords)) satisfies PlanResponse);
 	} catch (e) {
 		if (e instanceof RoutingError) return errorResponse(e.message, e.status);
 		// 想定外のエラーは内容を画面に出さずログにだけ残す

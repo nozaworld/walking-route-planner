@@ -34,12 +34,11 @@ type OrsResponse = {
 };
 
 /**
- * 経由点を順に徒歩ルートでつなぐ．
- * 全区間を1リクエストで取得する（旧版は区間ごとに順番に呼んでいた）．
- * waypoints は ORS_MAX_WAYPOINTS 点以下にしてから渡すこと．
+ * ORS の徒歩ルートの API を呼び，経路の座標と距離を返す．
+ * body は ORS にそのまま送る本文（座標は [経度, 緯度] の順）．
  */
-export async function routeOnFoot(
-	waypoints: LatLng[],
+async function requestFootRoute(
+	body: Record<string, unknown>,
 ): Promise<{ coords: LatLng[]; distance: number }> {
 	const apiKey = process.env.ORS_API_KEY;
 	if (!apiKey) {
@@ -54,10 +53,7 @@ export async function routeOnFoot(
 			"Content-Type": "application/json",
 			Accept: "application/geo+json",
 		},
-		// ORS の座標は [経度, 緯度] の順
-		body: JSON.stringify({
-			coordinates: waypoints.map((p) => [p.lng, p.lat]),
-		}),
+		body: JSON.stringify(body),
 	});
 	const data = (await res.json().catch(() => ({}))) as OrsResponse;
 
@@ -70,6 +66,29 @@ export async function routeOnFoot(
 		coords: feature.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })),
 		distance: feature.properties.summary.distance ?? 0,
 	};
+}
+
+/**
+ * 経由点を順に徒歩ルートでつなぐ．
+ * 全区間を1リクエストで取得する（旧版は区間ごとに順番に呼んでいた）．
+ * waypoints は ORS_MAX_WAYPOINTS 点以下にしてから渡すこと．
+ */
+export function routeOnFoot(waypoints: LatLng[]) {
+	return requestFootRoute({
+		coordinates: waypoints.map((p) => [p.lng, p.lat]),
+	});
+}
+
+/**
+ * start から出て start に戻る，およそ length [m] の周回ルートを作る（逆算モード用）．
+ * seed を変えると別のルートになる．
+ */
+export function roundTripOnFoot(start: LatLng, length: number, seed: number) {
+	return requestFootRoute({
+		coordinates: [[start.lng, start.lat]],
+		// points は周回の途中で通る点の数（多いほど丸い形に近づく）
+		options: { round_trip: { length, points: 5, seed } },
+	});
 }
 
 /**

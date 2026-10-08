@@ -1,5 +1,5 @@
 /**
- * 経路計算 API（POST /api/plan）の入出力の定義．
+ * 経路計算 API（POST /api/plan）と周回ルート API（POST /api/round-trip）の入出力の定義．
  * リクエストの検査に使う zod スキーマと，レスポンスの型を画面と API で共有する．
  */
 
@@ -20,6 +20,16 @@ export const planRequestSchema = z.object({
 });
 
 export type PlanRequest = z.infer<typeof planRequestSchema>;
+
+/** 周回ルートの長さの範囲 [m]（短すぎると道が見つからず，長すぎると ORS が断る） */
+export const ROUND_TRIP_LENGTH = { min: 500, max: 30_000 };
+
+/** 周回ルートのリクエスト本文．seed を変えると別のルートになる */
+export const roundTripRequestSchema = z.object({
+	start: latLngSchema,
+	length: z.number().min(ROUND_TRIP_LENGTH.min).max(ROUND_TRIP_LENGTH.max),
+	seed: z.number().int().min(0).max(1_000_000),
+});
 
 /** 成功時のレスポンス */
 export type PlanResponse = {

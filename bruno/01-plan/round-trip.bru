@@ -1,0 +1,39 @@
+meta {
+  name: 周回ルート
+  type: http
+  seq: 3
+}
+
+docs {
+  東山動植物園から出て戻る約3km の周回ルート（ORS の利用回数を1回使う）．
+}
+
+post {
+  url: {{baseUrl}}/api/round-trip
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "start": { "lat": 35.1586, "lng": 136.975 },
+    "length": 3000,
+    "seed": 1
+  }
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("始点と終点が同じ周回ルートになる", function () {
+    const c = res.body.coords;
+    expect(c[0].lat).to.be.closeTo(c[c.length - 1].lat, 0.0001);
+    expect(c[0].lng).to.be.closeTo(c[c.length - 1].lng, 0.0001);
+  });
+}

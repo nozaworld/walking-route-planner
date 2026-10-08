@@ -3,6 +3,7 @@
 /**
  * ルート疲労度プランナーの画面全体．
  * 地図を画面いっぱいに広げ，操作パネルを PC では左に浮かせ，スマホでは下に置く．
+ * ルートの作り方は2通り：地図をクリックして描く（draw）か，目標から周回ルートを作る（target，逆算モード）．
  * 「描きはじめる → 地図をクリック → 確定」の流れを状態（Phase）で管理し，
  * 手順の案内・統計・断面図・保存済みルート・ログインをパネルの中に組み立てる．
  */
@@ -14,11 +15,19 @@ import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
 import type { Place } from "@/lib/geocode";
 import { gradeStops } from "@/lib/grade";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
+import {
+	actualValue,
+	correctLength,
+	estimateLength,
+	needsCorrection,
+	type TargetKind,
+} from "@/lib/round-trip";
 import {
 	loadPanelSize,
 	loadWeight,
@@ -36,6 +45,7 @@ import { SaveRouteDialog } from "./save-route-dialog";
 import { SavedRouteList } from "./saved-route-list";
 import { StatsSummary } from "./stats-summary";
 import { type Phase, StepGuide } from "./step-guide";
+import { TargetForm } from "./target-form";
 import { useSavedRoutes } from "./use-saved-routes";
 
 // 地図（MapLibre）は window と WebGL に依存するので，ブラウザでのみ読み込む
@@ -51,6 +61,32 @@ const DEFAULT_WEIGHT = 60;
 const DEFAULT_PANEL: PanelSize = { width: 380, height: 50 };
 const PANEL_WIDTH = { min: 320, max: 640 };
 const PANEL_HEIGHT = { min: 25, max: 85 };
+
+/** ルートの作り方：地図に描く／目標から周回ルートを作る */
+type Mode = "draw" | "target";
+
+/** 目標の初期値（種類ごと） */
+const DEFAULT_TARGET: Record<TargetKind, string> = {
+	kcal: "200",
+	minutes: "45",
+	km: "3",
+};
+
+/** 周回ルートの API を呼ぶ */
+async function fetchRoundTrip(
+	start: LatLng,
+	length: number,
+	seed: number,
+): Promise<PlanResponse> {
+	const res = await fetch("/api/round-trip", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ start, length: Math.round(length), seed }),
+	});
+	const data = (await res.json()) as PlanResponse | PlanErrorResponse;
+	if ("error" in data) throw new Error(data.error);
+	return data;
+}
 
 /** パネルのタブ */
 type Tab = "plan" | "saved";
@@ -78,6 +114,9 @@ export function Planner() {
 	const mapCenter = useRef<LatLng | null>(null);
 	// 断面図でカーソルを合わせている地点（地図にも点で示す）
 	const [highlight, setHighlight] = useState<LatLng | null>(null);
+	const [mode, setMode] = useState<Mode>("draw");
+	const [targetKind, setTargetKind] = useState<TargetKind>("kcal");
+	const [targetInput, setTargetInput] = useState(DEFAULT_TARGET.kcal);
 
 	// localStorage はサーバーでは読めないので，表示後に読み込む
 	useEffect(() => {
@@ -122,10 +161,76 @@ export function Planner() {
 		setPhase("drawing");
 	}
 
-	/** 描いている間だけ，クリックした点を経由点に加える */
+	/**
+	 * 地図のクリック．描くモードでは経由点を加え，
+	 * 逆算モードでは出発地点を選び直す（作ったルートは消す）．
+	 */
 	function handleMapClick(p: LatLng) {
+		if (mode === "target") {
+			if (phase === "loading") return;
+			setWaypoints([p]);
+			setPlan(null);
+			setViewingId(null);
+			setError(null);
+			setPhase("idle");
+			return;
+		}
 		if (phase !== "drawing") return;
 		setWaypoints((prev) => [...prev, p]);
+	}
+
+	/** 作り方を切り替える．途中の状態は捨てる */
+	function changeMode(next: Mode) {
+		reset();
+		setMode(next);
+	}
+
+	/** 目標の種類を変え，値はその種類の初期値にする */
+	function changeTargetKind(kind: TargetKind) {
+		setTargetKind(kind);
+		setTargetInput(DEFAULT_TARGET[kind]);
+	}
+
+	/**
+	 * 目標から周回ルートを作る．
+	 * 平地を前提に長さを見積もって作り，目標から大きくずれていたら長さを補正して1回だけ作り直す．
+	 */
+	async function generateRoundTrip() {
+		const start = waypoints[0];
+		const target = Number.parseFloat(targetInput);
+		if (!start || !(target > 0)) return;
+		setPhase("loading");
+		setError(null);
+		setViewingId(null);
+		// 同じ条件でも「別の候補」で違うルートになるよう，毎回乱数の種を変える
+		const seed = Math.floor(Math.random() * 1_000_000);
+		try {
+			let length = estimateLength(targetKind, target, weight);
+			let result = await fetchRoundTrip(start, length, seed);
+			const first = actualValue(targetKind, statsOf(result));
+			if (needsCorrection(target, first)) {
+				length = correctLength(length, target, first);
+				result = await fetchRoundTrip(start, length, seed);
+			}
+			setPlan(result);
+			setFitKey(`round-${Date.now()}`);
+			setPhase("result");
+		} catch (e) {
+			setError(
+				e instanceof Error && !(e instanceof TypeError)
+					? e.message
+					: "通信に失敗しました．接続を確認してください．",
+			);
+			setPhase("idle");
+		}
+	}
+
+	/** API の結果から，今の体重での統計を求める */
+	function statsOf(result: PlanResponse) {
+		return computeStats(
+			buildSegments(result.profile.points, result.profile.elevs),
+			weight,
+		);
 	}
 
 	/** 最後に打った点を取り消す */
@@ -231,7 +336,7 @@ export function Planner() {
 				fitKey={fitKey}
 				panelSize={panelSize}
 				place={place}
-				drawing={phase === "drawing"}
+				drawing={phase === "drawing" || mode === "target"}
 				gradeStops={stops}
 				highlight={highlight}
 				onMapClick={handleMapClick}
@@ -247,10 +352,13 @@ export function Planner() {
 				className="absolute top-4 right-16 left-4 z-30 md:right-auto md:left-[calc(var(--panel-w)+2rem)] md:w-[min(420px,calc(100%-var(--panel-w)-7rem))]"
 			/>
 
-			{/* 描いている間は，地図の上に操作のヒントを出す */}
-			{phase === "drawing" && (
+			{/* 描いている間と，逆算モードで出発地点を選ぶ前は，地図の上に操作のヒントを出す */}
+			{(phase === "drawing" ||
+				(mode === "target" && waypoints.length === 0)) && (
 				<div className="pointer-events-none absolute top-[4.5rem] left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+var(--panel-w)/2+0.5rem)]">
-					地図をクリックして道をたどる
+					{mode === "target"
+						? "地図をクリックして出発地点を選ぶ"
+						: "地図をクリックして道をたどる"}
 				</div>
 			)}
 
@@ -303,6 +411,23 @@ export function Planner() {
 							value="plan"
 							className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pt-4 pb-5"
 						>
+							<ToggleGroup
+								aria-label="ルートの作り方"
+								variant="outline"
+								spacing={0}
+								className="w-full"
+								value={[mode]}
+								// 選択中の項目をもう一度押しても空にならないようにする
+								onValueChange={(v) => v[0] && changeMode(v[0] as Mode)}
+							>
+								<ToggleGroupItem value="draw" className="flex-1">
+									地図に描いて作る
+								</ToggleGroupItem>
+								<ToggleGroupItem value="target" className="flex-1">
+									目標から作る
+								</ToggleGroupItem>
+							</ToggleGroup>
+
 							<div className="flex items-center justify-between gap-3">
 								<label
 									htmlFor="weight"
@@ -343,16 +468,32 @@ export function Planner() {
 									onHoverChange={setHighlight}
 								/>
 							)}
-							<StepGuide
-								phase={phase}
-								waypointCount={waypoints.length}
-								saved={viewingId !== null}
-								onStart={startDrawing}
-								onUndo={undoWaypoint}
-								onFinish={finishDrawing}
-								onCancel={reset}
-								onSave={() => setSaveOpen(true)}
-							/>
+							{mode === "draw" ? (
+								<StepGuide
+									phase={phase}
+									waypointCount={waypoints.length}
+									saved={viewingId !== null}
+									onStart={startDrawing}
+									onUndo={undoWaypoint}
+									onFinish={finishDrawing}
+									onCancel={reset}
+									onSave={() => setSaveOpen(true)}
+								/>
+							) : (
+								<TargetForm
+									kind={targetKind}
+									value={targetInput}
+									onKindChange={changeTargetKind}
+									onValueChange={setTargetInput}
+									hasStart={waypoints.length > 0}
+									loading={phase === "loading"}
+									actual={stats ? actualValue(targetKind, stats) : null}
+									saved={viewingId !== null}
+									onGenerate={generateRoundTrip}
+									onAnother={generateRoundTrip}
+									onSave={() => setSaveOpen(true)}
+								/>
+							)}
 						</TabsContent>
 
 						<TabsContent
