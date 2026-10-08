@@ -1,9 +1,10 @@
 /**
  * 操作パネルの見出し．
- * 落款（はんこ）風のロゴ，アプリ名，ひとこと説明，表示モードの切り替えを，
+ * 落款（はんこ）風のロゴ，アプリ名，ひとこと説明，表示モードの切り替え，アカウントのボタンを，
  * 青海波の文様を薄く敷いた帯の上に並べる．
  */
 
+import { AccountMenu } from "./account-menu";
 import { ThemeToggle } from "./theme-toggle";
 
 /** ロゴとアプリ名の帯 */
@@ -30,7 +31,10 @@ export function PanelHeader() {
 						坂道まで考えて，歩く道のりを見積もる
 					</p>
 				</div>
-				<ThemeToggle />
+				<div className="flex shrink-0 items-center gap-1">
+					<ThemeToggle />
+					<AccountMenu />
+				</div>
 			</div>
 		</header>
 	);

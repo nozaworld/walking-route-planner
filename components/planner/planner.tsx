@@ -203,6 +203,8 @@ export function Planner() {
 		savePanelSize(size);
 	}
 
+	// 重なり順：地図 → ヒント・計算中の覆い（z-10）→ パネル（z-20）→ 検索欄（z-30）．
+	// ダイアログ・メニュー（shadcn，z-50）と通知はこれらより上に出る
 	return (
 		<main
 			className="relative h-dvh overflow-hidden"
@@ -231,17 +233,17 @@ export function Planner() {
 			<PlaceSearch
 				getCenter={() => mapCenter.current}
 				onSelect={(p) => setPlace({ ...p, key: Date.now() })}
-				className="absolute top-4 right-16 left-4 z-[650] md:right-auto md:left-[calc(var(--panel-w)+2rem)] md:w-[min(420px,calc(100%-var(--panel-w)-7rem))]"
+				className="absolute top-4 right-16 left-4 z-30 md:right-auto md:left-[calc(var(--panel-w)+2rem)] md:w-[min(420px,calc(100%-var(--panel-w)-7rem))]"
 			/>
 
 			{/* 描いている間は，地図の上に操作のヒントを出す */}
 			{phase === "drawing" && (
-				<div className="pointer-events-none absolute top-[4.5rem] left-1/2 z-[500] -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+var(--panel-w)/2+0.5rem)]">
+				<div className="pointer-events-none absolute top-[4.5rem] left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+var(--panel-w)/2+0.5rem)]">
 					地図をクリックして道をたどる
 				</div>
 			)}
 
-			<aside className="absolute inset-x-0 bottom-0 z-[600] flex h-(--panel-h) flex-col rounded-t-2xl border bg-card/95 shadow-xl backdrop-blur md:inset-y-4 md:right-auto md:left-4 md:h-auto md:w-(--panel-w) md:rounded-2xl">
+			<aside className="absolute inset-x-0 bottom-0 z-20 flex h-(--panel-h) flex-col rounded-t-2xl border bg-card/95 shadow-xl backdrop-blur md:inset-y-4 md:right-auto md:left-4 md:h-auto md:w-(--panel-w) md:rounded-2xl">
 				{/* スマホは上端，PC は右端のつまみで大きさを変える */}
 				<ResizeHandle
 					axis="y"
@@ -358,7 +360,7 @@ export function Planner() {
 
 			{/* 計算中は地図を薄く覆って，クリックを受け付けない */}
 			{phase === "loading" && (
-				<div className="absolute inset-0 z-[500] bg-background/40 backdrop-blur-[1px]" />
+				<div className="absolute inset-0 z-10 bg-background/40 backdrop-blur-[1px]" />
 			)}
 
 			<SaveRouteDialog
