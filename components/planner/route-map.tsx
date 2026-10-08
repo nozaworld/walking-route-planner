@@ -118,7 +118,11 @@ function FitToRoute({
 	// biome-ignore lint/correctness/useExhaustiveDependencies: fitKey が変わったときだけ合わせ直す（route の参照の変化では動かさない）
 	useEffect(() => {
 		if (!route || route.length < 2) return;
-		map.fitBounds(latLngBounds(route).pad(0.2));
+		// 下端は地図に重ねた標高断面図（約150px）の分だけ余白を多くとる
+		map.fitBounds(latLngBounds(route), {
+			paddingTopLeft: [30, 30],
+			paddingBottomRight: [30, 170],
+		});
 	}, [fitKey, map]);
 	return null;
 }

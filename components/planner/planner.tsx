@@ -3,22 +3,30 @@
 /**
  * ルート疲労度プランナーの画面全体．
  * 「出発地点を選ぶ → 地図をクリック → 経路を確定」の流れを状態（Phase）で管理し，
- * 地図・エラー・読み込み中の表示を組み立てる．
+ * 地図・断面図・統計・エラー・読み込み中の表示を組み立てる．
  */
 
 import { Loader2Icon, TriangleAlertIcon } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
+import { loadWeight, saveWeight } from "@/lib/storage";
+import { ElevationProfile } from "./elevation-profile";
+import { StatsSummary } from "./stats-summary";
 
 // Leaflet は window に依存するので，ブラウザでのみ読み込む
 const RouteMap = dynamic(() => import("./route-map"), {
 	ssr: false,
 	loading: () => <div className="absolute inset-0 bg-muted" />,
 });
+
+/** 体重が未入力・不正なときに使う値 [kg] */
+const DEFAULT_WEIGHT = 60;
 
 /**
  * 画面の段階．
@@ -43,6 +51,27 @@ export function Planner() {
 	const [plan, setPlan] = useState<PlanResponse | null>(null);
 	const [fitKey, setFitKey] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	// 入力途中（空欄など）も表示できるよう，体重は文字列のまま持つ
+	const [weightInput, setWeightInput] = useState(String(DEFAULT_WEIGHT));
+
+	// localStorage はサーバーでは読めないので，表示後に読み込む
+	useEffect(() => {
+		const saved = loadWeight();
+		if (saved !== null) setWeightInput(String(saved));
+	}, []);
+
+	/** 計算に使う体重 [kg]．不正な入力なら既定値 */
+	const weight = useMemo(() => {
+		const v = Number.parseFloat(weightInput);
+		return Number.isFinite(v) && v > 0 ? v : DEFAULT_WEIGHT;
+	}, [weightInput]);
+
+	// 標高は取得済みなので，体重を変えても再取得せず計算し直すだけ（旧版は毎回取り直していた）
+	const stats = useMemo(() => {
+		if (!plan) return null;
+		const { points, elevs } = plan.profile;
+		return computeStats(buildSegments(points, elevs), weight);
+	}, [plan, weight]);
 
 	/** すべてを最初の状態に戻す */
 	function reset() {
@@ -62,6 +91,12 @@ export function Planner() {
 	function handleMapClick(p: LatLng) {
 		if (phase !== "drawing") return;
 		setWaypoints((prev) => [...prev, p]);
+	}
+
+	/** 入力欄から離れたら，実際に使う値に揃えて保存する */
+	function handleWeightBlur() {
+		setWeightInput(String(weight));
+		saveWeight(weight);
 	}
 
 	/** 経由点を API に送り，徒歩ルートと標高を受け取る */
@@ -97,6 +132,21 @@ export function Planner() {
 				<h1 className="font-bold text-lg tracking-wide">
 					ルート疲労度プランナー
 				</h1>
+				<label className="ml-auto flex items-center gap-2 text-sm">
+					体重
+					<Input
+						type="number"
+						inputMode="decimal"
+						min={20}
+						max={200}
+						step={0.1}
+						value={weightInput}
+						onChange={(e) => setWeightInput(e.target.value)}
+						onBlur={handleWeightBlur}
+						className="w-20"
+					/>
+					kg
+				</label>
 			</header>
 
 			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -122,6 +172,12 @@ export function Planner() {
 							計算中です．しばらくお待ちください．
 						</div>
 					)}
+					{plan && (
+						<ElevationProfile
+							points={plan.profile.points}
+							elevs={plan.profile.elevs}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -146,6 +202,7 @@ export function Planner() {
 					やり直す
 				</Button>
 				<span className="text-muted-foreground text-xs">{HINTS[phase]}</span>
+				{stats && <StatsSummary stats={stats} className="ml-auto" />}
 			</div>
 		</div>
 	);
