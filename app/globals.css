@@ -231,9 +231,14 @@
 	background-size: 48px 24px;
 }
 
-/* Leaflet の地図まわりを和風の配色とフォントに合わせる */
-.leaflet-container {
+/*
+ * Leaflet の地図まわりを和風の配色とフォントに合わせる．
+ * タイルの読み込みが間に合わない部分は，白ではなく背景色（生成り・墨）を見せる．
+ * leaflet.css の指定（#ddd）より後から読まれても勝つよう，セレクタを重ねている．
+ */
+.leaflet-container.leaflet-container {
 	font-family: inherit;
+	background-color: var(--background);
 }
 
 /* ルートの線と点の色（route-map.tsx の className と対応） */
