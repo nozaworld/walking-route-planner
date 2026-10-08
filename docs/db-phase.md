@@ -36,7 +36,7 @@
 
 ## 3. テーブル
 
-better-auth の4つのテーブル（`user`，`session`，`account`，`verification`）は CLI で生成する．アプリ独自のテーブルは次の2つ．
+better-auth の4つのテーブル（`user`，`session`，`account`，`verification`）は CLI で生成する．アプリ独自のテーブルは次の2つ（better-auth のログインの回数制限用に `rate_limit` も CLI で生成される）．
 
 ### `routes`：保存したルート
 
@@ -53,7 +53,7 @@ better-auth の4つのテーブル（`user`，`session`，`account`，`verificat
 
 索引：`(user_id, created_at)`．1人あたり最大 200 件．
 
-### `rate_limits`：利用回数
+### `api_usage`：API の利用回数（better-auth のログイン用の `rate_limit` とは別）
 
 | 列 | 型 | 説明 |
 |---|---|---|
