@@ -3,6 +3,7 @@
  * 1. 経由点を ORS で徒歩ルートにする
  * 2. ルートを断面図用に間引き，国土地理院から標高を取る
  * 消費カロリーなどの計算は，体重を変えたときにすぐ反映できるよう画面側で行う．
+ * ORS の無料枠を守るため，呼ぶ前に利用回数を数える（lib/server/rate-limit.ts）．
  */
 
 import { downsample } from "@/lib/geo";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/plan";
 import { getElevations } from "@/lib/server/elevation";
 import { ORS_MAX_WAYPOINTS, RoutingError, routeOnFoot } from "@/lib/server/ors";
+import { checkRateLimit, tooManyRequests } from "@/lib/server/rate-limit";
 
 /** 断面図と統計に使う点の数 */
 const PROFILE_SAMPLES = 50;
@@ -31,6 +33,10 @@ export async function POST(request: Request) {
 	if (!parsed.success) {
 		return errorResponse("経由点は2点以上指定してください．", 400);
 	}
+
+	// 入力が正しいものだけを数える
+	const limit = await checkRateLimit("plan", request);
+	if (!limit.ok) return tooManyRequests(limit);
 
 	try {
 		const waypoints = downsample(parsed.data.waypoints, ORS_MAX_WAYPOINTS);
