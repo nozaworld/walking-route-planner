@@ -1,6 +1,7 @@
 # CI：main への push と main 向けのプルリクエストごとに，コードの品質を確かめる．
 #   check … Biome（lint・整形），TypeScript の型チェック，Vitest のユニットテスト
-#   e2e   … 本番ビルドを作り，Playwright で3ブラウザの E2E テスト
+#   e2e   … 本番ビルドを作り，Playwright で Chromium・WebKit の E2E テスト
+#           （Firefox は GPU のない CI では WebGL が使えず，地図を描けないので除く）
 # E2E では経路計算 API を差し替えるので，ORS の API キーは要らない．
 name: CI
 
@@ -68,15 +69,15 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Playwright のブラウザを入れる
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium webkit
       - name: Playwright の依存パッケージを入れる
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps
+        run: npx playwright install-deps chromium webkit
 
       - name: 本番ビルド
         run: npm run build
       - name: E2E テスト
-        run: npx playwright test
+        run: npx playwright test --project=chromium --project=webkit
 
       - name: テストレポートを保存
         uses: actions/upload-artifact@v7

@@ -157,7 +157,7 @@ Vercel では，Neon の連携（Marketplace）で `DATABASE_URL` などが自�
 | ジョブ | 内容 |
 |---|---|
 | Lint・型チェック・ユニットテスト | `biome ci`，`tsc --noEmit`，`vitest run` |
-| ビルド・E2E テスト | `next build` のあと，本番サーバーに対して Playwright で Chromium・Firefox・WebKit のテスト |
+| ビルド・E2E テスト | `next build` のあと，本番サーバーに対して Playwright で Chromium・WebKit のテスト（Firefox は CI に GPU がなく WebGL が使えないため手元でのみ） |
 
 E2E テストでは経路計算・ログイン・保存ルートの API の応答を差し替えるので，CI に API キーや DB を用意する必要はありません．
 
