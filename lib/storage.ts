@@ -1,6 +1,6 @@
 /**
  * ブラウザの localStorage への保存と読み込み．
- * 体重と保存済みルートを扱う（ログインと DB 保存は次フェーズで対応）．
+ * 体重・操作パネルの大きさ・保存済みルートを扱う（ログインと DB 保存は次フェーズで対応）．
  * プライベートモードなどで localStorage が使えない場合は，黙って保存しない．
  */
 
@@ -9,6 +9,10 @@ import type { LatLng } from "./geo";
 
 const STORAGE_KEY_WEIGHT = "fatigueplanner_weight";
 const STORAGE_KEY_ROUTES = "fatigueplanner_routes";
+const STORAGE_KEY_PANEL = "fatigueplanner_panel";
+
+/** 操作パネルの大きさ．width は PC での幅 [px]，height はスマホでの高さ [画面の高さに対する%] */
+export type PanelSize = { width: number; height: number };
 
 /** 保存したルート */
 export type SavedRoute = {
@@ -36,6 +40,27 @@ export function loadWeight(): number | null {
 export function saveWeight(weight: number): void {
 	try {
 		localStorage.setItem(STORAGE_KEY_WEIGHT, String(weight));
+	} catch {
+		// 保存できなくても画面の動作には影響しない
+	}
+}
+
+/** 保存した操作パネルの大きさを読む．なければ null */
+export function loadPanelSize(): PanelSize | null {
+	try {
+		const v = JSON.parse(localStorage.getItem(STORAGE_KEY_PANEL) ?? "null");
+		return typeof v?.width === "number" && typeof v?.height === "number"
+			? { width: v.width, height: v.height }
+			: null;
+	} catch {
+		return null;
+	}
+}
+
+/** 操作パネルの大きさを保存する */
+export function savePanelSize(size: PanelSize): void {
+	try {
+		localStorage.setItem(STORAGE_KEY_PANEL, JSON.stringify(size));
 	} catch {
 		// 保存できなくても画面の動作には影響しない
 	}

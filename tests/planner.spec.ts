@@ -107,3 +107,28 @@ test("保存したルートは再読み込み後も一覧に残り，削除で�
 		page.getByText("まだ保存されたルートはありません"),
 	).toBeVisible();
 });
+
+test("パネルの幅を変えられ，再読み込み後も保たれる", async ({ page }) => {
+	const handle = page.getByRole("separator", { name: "パネルの幅を変える" });
+	await expect(handle).toHaveAttribute("aria-valuenow", "380");
+
+	// つまみを右へ 100px ドラッグする
+	const box = await handle.boundingBox();
+	if (!box) throw new Error("つまみが見つからない");
+	const y = box.y + box.height / 2;
+	await page.mouse.move(box.x + box.width / 2, y);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2 + 100, y, { steps: 5 });
+	await page.mouse.up();
+	await expect(handle).toHaveAttribute("aria-valuenow", "480");
+
+	// キーボードでも変えられる
+	await handle.focus();
+	await page.keyboard.press("ArrowLeft");
+	await expect(handle).toHaveAttribute("aria-valuenow", "460");
+
+	await page.reload();
+	await expect(
+		page.getByRole("separator", { name: "パネルの幅を変える" }),
+	).toHaveAttribute("aria-valuenow", "460");
+});

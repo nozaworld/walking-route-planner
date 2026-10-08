@@ -18,14 +18,18 @@ import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
 import {
+	loadPanelSize,
 	loadRoutes,
 	loadWeight,
+	type PanelSize,
 	type SavedRoute,
+	savePanelSize,
 	saveRoutes,
 	saveWeight,
 } from "@/lib/storage";
 import { ElevationProfile } from "./elevation-profile";
 import { PanelHeader } from "./panel-header";
+import { ResizeHandle } from "./resize-handle";
 import { SaveRouteDialog } from "./save-route-dialog";
 import { SavedRouteList } from "./saved-route-list";
 import { StatsSummary } from "./stats-summary";
@@ -39,6 +43,11 @@ const RouteMap = dynamic(() => import("./route-map"), {
 
 /** 体重が未入力・不正なときに使う値 [kg] */
 const DEFAULT_WEIGHT = 60;
+
+/** 操作パネルの大きさの既定値と範囲（幅は px，高さは画面の高さに対する%） */
+const DEFAULT_PANEL: PanelSize = { width: 380, height: 50 };
+const PANEL_WIDTH = { min: 320, max: 640 };
+const PANEL_HEIGHT = { min: 25, max: 85 };
 
 /** パネルのタブ */
 type Tab = "plan" | "saved";
@@ -57,12 +66,15 @@ export function Planner() {
 	const [routes, setRoutes] = useState<SavedRoute[]>([]);
 	const [saveOpen, setSaveOpen] = useState(false);
 	const [tab, setTab] = useState<Tab>("plan");
+	const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL);
 
 	// localStorage はサーバーでは読めないので，表示後に読み込む
 	useEffect(() => {
 		const saved = loadWeight();
 		if (saved !== null) setWeightInput(String(saved));
 		setRoutes(loadRoutes());
+		const panel = loadPanelSize();
+		if (panel) setPanelSize(panel);
 	}, []);
 
 	/** 計算に使う体重 [kg]．不正な入力なら既定値 */
@@ -178,106 +190,152 @@ export function Planner() {
 		if (viewingId === id) setViewingId(null);
 	}
 
+	/** パネルの大きさを変えたら保存する */
+	function commitPanelSize(next: Partial<PanelSize>) {
+		const size = { ...panelSize, ...next };
+		setPanelSize(size);
+		savePanelSize(size);
+	}
+
 	return (
-		<main className="relative h-dvh overflow-hidden">
+		<main
+			className="relative h-dvh overflow-hidden"
+			// パネルと，パネルの横に置く要素の位置を CSS 変数で揃える
+			style={
+				{
+					"--panel-w": `${panelSize.width}px`,
+					"--panel-h": `${panelSize.height}dvh`,
+				} as React.CSSProperties
+			}
+		>
 			<RouteMap
 				waypoints={waypoints}
 				route={plan?.coords ?? null}
 				fitKey={fitKey}
+				panelSize={panelSize}
 				onMapClick={handleMapClick}
 			/>
 
 			{/* 描いている間は，地図の上に操作のヒントを出す */}
 			{phase === "drawing" && (
-				<div className="pointer-events-none absolute top-4 left-1/2 z-[500] -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+210px)]">
+				<div className="pointer-events-none absolute top-4 left-1/2 z-[500] -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+var(--panel-w)/2+0.5rem)]">
 					地図をクリックして道をたどる
 				</div>
 			)}
 
-			<aside className="absolute inset-x-0 bottom-0 z-[600] flex max-h-[50dvh] flex-col overflow-hidden rounded-t-2xl border bg-card/95 shadow-xl backdrop-blur md:inset-y-4 md:right-auto md:left-4 md:max-h-none md:w-[380px] md:rounded-2xl">
-				<PanelHeader />
+			<aside className="absolute inset-x-0 bottom-0 z-[600] flex h-(--panel-h) flex-col rounded-t-2xl border bg-card/95 shadow-xl backdrop-blur md:inset-y-4 md:right-auto md:left-4 md:h-auto md:w-(--panel-w) md:rounded-2xl">
+				{/* スマホは上端，PC は右端のつまみで大きさを変える */}
+				<ResizeHandle
+					axis="y"
+					value={panelSize.height}
+					min={PANEL_HEIGHT.min}
+					max={PANEL_HEIGHT.max}
+					step={5}
+					onChange={(height) => setPanelSize((s) => ({ ...s, height }))}
+					onCommit={(height) => commitPanelSize({ height })}
+					label="パネルの高さを変える"
+					className="md:hidden"
+				/>
+				<ResizeHandle
+					axis="x"
+					value={panelSize.width}
+					min={PANEL_WIDTH.min}
+					max={PANEL_WIDTH.max}
+					step={20}
+					onChange={(width) => setPanelSize((s) => ({ ...s, width }))}
+					onCommit={(width) => commitPanelSize({ width })}
+					label="パネルの幅を変える"
+					className="hidden md:flex"
+				/>
+				{/* 角丸からはみ出さないよう，中身はこの内側で切り取る */}
+				<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
+					<PanelHeader />
 
-				<Tabs
-					value={tab}
-					onValueChange={(v) => setTab(v as Tab)}
-					className="min-h-0 flex-1 gap-0"
-				>
-					<div className="shrink-0 px-5 pt-3">
-						<TabsList className="w-full">
-							<TabsTrigger value="plan">ルートを作る</TabsTrigger>
-							<TabsTrigger value="saved">
-								保存済み
-								<span className="text-muted-foreground text-xs tabular-nums">
-									{routes.length}
-								</span>
-							</TabsTrigger>
-						</TabsList>
-					</div>
-
-					<TabsContent
-						value="plan"
-						className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pt-4 pb-5"
+					<Tabs
+						value={tab}
+						onValueChange={(v) => setTab(v as Tab)}
+						className="min-h-0 flex-1 gap-0"
 					>
-						<div className="flex items-center justify-between gap-3">
-							<label htmlFor="weight" className="text-muted-foreground text-sm">
-								体重
-							</label>
-							<div className="flex items-center gap-1.5 text-sm">
-								<Input
-									id="weight"
-									type="number"
-									inputMode="decimal"
-									min={20}
-									max={200}
-									step={0.1}
-									value={weightInput}
-									onChange={(e) => setWeightInput(e.target.value)}
-									onBlur={handleWeightBlur}
-									className="w-20 text-right tabular-nums"
-								/>
-								kg
-							</div>
+						<div className="shrink-0 px-5 pt-3">
+							<TabsList className="w-full">
+								<TabsTrigger value="plan">ルートを作る</TabsTrigger>
+								<TabsTrigger value="saved">
+									保存済み
+									<span className="text-muted-foreground text-xs tabular-nums">
+										{routes.length}
+									</span>
+								</TabsTrigger>
+							</TabsList>
 						</div>
 
-						{error && (
-							<Alert variant="destructive">
-								<TriangleAlertIcon />
-								<AlertDescription>{error}</AlertDescription>
-							</Alert>
-						)}
+						<TabsContent
+							value="plan"
+							className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pt-4 pb-5"
+						>
+							<div className="flex items-center justify-between gap-3">
+								<label
+									htmlFor="weight"
+									className="text-muted-foreground text-sm"
+								>
+									体重
+								</label>
+								<div className="flex items-center gap-1.5 text-sm">
+									<Input
+										id="weight"
+										type="number"
+										inputMode="decimal"
+										min={20}
+										max={200}
+										step={0.1}
+										value={weightInput}
+										onChange={(e) => setWeightInput(e.target.value)}
+										onBlur={handleWeightBlur}
+										className="w-20 text-right tabular-nums"
+									/>
+									kg
+								</div>
+							</div>
 
-						{/* 確定後は結果を先に見せる（スマホでは下のシートに収まる範囲が狭いため） */}
-						{stats && <StatsSummary stats={stats} />}
-						{plan && (
-							<ElevationProfile
-								points={plan.profile.points}
-								elevs={plan.profile.elevs}
+							{error && (
+								<Alert variant="destructive">
+									<TriangleAlertIcon />
+									<AlertDescription>{error}</AlertDescription>
+								</Alert>
+							)}
+
+							{/* 確定後は結果を先に見せる（スマホでは下のシートに収まる範囲が狭いため） */}
+							{stats && <StatsSummary stats={stats} />}
+							{plan && (
+								<ElevationProfile
+									points={plan.profile.points}
+									elevs={plan.profile.elevs}
+								/>
+							)}
+							<StepGuide
+								phase={phase}
+								waypointCount={waypoints.length}
+								saved={viewingId !== null}
+								onStart={startDrawing}
+								onUndo={undoWaypoint}
+								onFinish={finishDrawing}
+								onCancel={reset}
+								onSave={() => setSaveOpen(true)}
 							/>
-						)}
-						<StepGuide
-							phase={phase}
-							waypointCount={waypoints.length}
-							saved={viewingId !== null}
-							onStart={startDrawing}
-							onUndo={undoWaypoint}
-							onFinish={finishDrawing}
-							onCancel={reset}
-							onSave={() => setSaveOpen(true)}
-						/>
-					</TabsContent>
+						</TabsContent>
 
-					<TabsContent
-						value="saved"
-						className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5"
-					>
-						<SavedRouteList
-							routes={routes}
-							activeId={viewingId}
-							onSelect={showSavedRoute}
-							onDelete={handleDelete}
-						/>
-					</TabsContent>
-				</Tabs>
+						<TabsContent
+							value="saved"
+							className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5"
+						>
+							<SavedRouteList
+								routes={routes}
+								activeId={viewingId}
+								onSelect={showSavedRoute}
+								onDelete={handleDelete}
+							/>
+						</TabsContent>
+					</Tabs>
+				</div>
 			</aside>
 
 			{/* 計算中は地図を薄く覆って，クリックを受け付けない */}

@@ -20,6 +20,7 @@ import {
 	ZoomControl,
 } from "react-leaflet";
 import type { LatLng } from "@/lib/geo";
+import type { PanelSize } from "@/lib/storage";
 
 /** 初期表示の中心（名古屋付近） */
 const INITIAL_CENTER: PointTuple = [35.18, 136.91];
@@ -38,8 +39,8 @@ const ATTRIBUTION = [
 /** md（768px）以上ならパネルは左，未満なら下にある */
 const DESKTOP_QUERY = "(min-width: 768px)";
 
-/** 左に浮かせたパネルの幅と余白の合計 [px]（PC 表示） */
-const PANEL_SPACE_DESKTOP = 380 + 16 + 24;
+/** パネルの外側の余白 [px]（パネルの左の 16px と，ルートとの間の 24px） */
+const PANEL_GAP = 16 + 24;
 
 type Props = {
 	/** クリックで打った経由点 */
@@ -48,6 +49,8 @@ type Props = {
 	route: LatLng[] | null;
 	/** この値が変わるたびに，ルート全体が収まるよう表示範囲を合わせる */
 	fitKey: string | null;
+	/** 操作パネルの大きさ（ルートをパネルに隠さないための余白の計算に使う） */
+	panelSize: PanelSize;
 	onMapClick: (p: LatLng) => void;
 };
 
@@ -56,6 +59,7 @@ export default function RouteMap({
 	waypoints,
 	route,
 	fitKey,
+	panelSize,
 	onMapClick,
 }: Props) {
 	return (
@@ -75,7 +79,7 @@ export default function RouteMap({
 			{/* 左上はパネルと重なるので，ズームボタンは右上に置く */}
 			<ZoomControl position="topright" />
 			<ClickHandler onMapClick={onMapClick} />
-			<FitToRoute route={route} fitKey={fitKey} />
+			<FitToRoute route={route} fitKey={fitKey} panelSize={panelSize} />
 			{/* 確定前は打った点を破線で結ぶ */}
 			{!route && waypoints.length > 1 && (
 				<Polyline
@@ -134,18 +138,20 @@ function ClickHandler({ onMapClick }: { onMapClick: (p: LatLng) => void }) {
 function FitToRoute({
 	route,
 	fitKey,
+	panelSize,
 }: {
 	route: LatLng[] | null;
 	fitKey: string | null;
+	panelSize: PanelSize;
 }) {
 	const map = useMap();
 	// biome-ignore lint/correctness/useExhaustiveDependencies: fitKey が変わったときだけ合わせ直す（route の参照の変化では動かさない）
 	useEffect(() => {
 		if (!route || route.length < 2) return;
 		const desktop = window.matchMedia(DESKTOP_QUERY).matches;
-		const sheetHeight = window.innerHeight * 0.5;
+		const sheetHeight = (window.innerHeight * panelSize.height) / 100;
 		map.fitBounds(latLngBounds(route), {
-			paddingTopLeft: desktop ? [PANEL_SPACE_DESKTOP, 40] : [24, 24],
+			paddingTopLeft: desktop ? [panelSize.width + PANEL_GAP, 40] : [24, 24],
 			paddingBottomRight: desktop ? [60, 40] : [24, sheetHeight + 16],
 		});
 	}, [fitKey, map]);
