@@ -1,0 +1,49 @@
+meta {
+  name: 新規登録
+  type: http
+  seq: 1
+}
+
+docs {
+  毎回別のメールアドレスで登録し，セッションの Cookie を後のリクエストのために覚える．
+}
+
+post {
+  url: {{baseUrl}}/api/auth/sign-up/email
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "name": "Bruno",
+    "email": "{{email}}",
+    "password": "password1234"
+  }
+}
+
+script:pre-request {
+  // 実行ごとに別のアカウントを作る（最後の「アカウント削除」で消す）
+  bru.setVar("email", `bruno-${Date.now()}@example.com`);
+}
+
+script:post-response {
+  // Set-Cookie から「名前=値」だけを取り出して，以降のリクエストで送る
+  const cookies = [].concat(res.getHeader("set-cookie") || []);
+  bru.setVar("cookie", cookies.map((c) => c.split(";")[0]).join("; "));
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("登録したユーザーを返す", function () {
+    expect(res.body.user.email).to.equal(bru.getVar("email"));
+  });
+}

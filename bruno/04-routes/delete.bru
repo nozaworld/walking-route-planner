@@ -1,0 +1,26 @@
+meta {
+  name: 削除
+  type: http
+  seq: 9
+}
+
+docs {
+  保存したルートを削除する．
+}
+
+delete {
+  url: {{baseUrl}}/api/routes/{{routeId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: {{cookie}}
+  Origin: {{baseUrl}}
+}
+
+tests {
+  test("204 を返す", function () {
+    expect(res.status).to.equal(204);
+  });
+}

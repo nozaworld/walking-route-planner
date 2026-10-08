@@ -106,6 +106,7 @@ lib/
   auth-client.ts            画面側のログインのクライアント
   server/                   サーバー専用（DB，認証，保存ルート，利用回数の制限，ORS・国土地理院の呼び出し）
 tests/                      Playwright の E2E テスト
+bruno/                      Bruno の API テスト（経路計算・地名検索・ログイン・保存ルート・共有ページ）
 .github/workflows/ci.yml    CI（GitHub Actions）
 docs/                       設計書（design.md：移植，db-phase.md：DB フェーズ）
 ```
@@ -141,6 +142,7 @@ Vercel では，Neon の連携（Marketplace）で `DATABASE_URL` などが自�
 | `npm run build` / `npm run start` | 本番ビルドと起動 |
 | `npm test` | Vitest でユニットテスト |
 | `npm run e2e` | Playwright で E2E テスト（API は差し替えるのでキー不要） |
+| `npm run api-test` | Bruno で API テスト（`bruno/`．開発サーバーを起動してから実行．ORS を3回分使い，作ったテスト用アカウントは最後に消す） |
 | `npm run lint` / `npm run format` | Biome でチェック・整形 |
 | `npm run typecheck` | ルートの型を生成（`next typegen`）してから TypeScript の型チェック |
 | `npm run db:generate` | テーブル定義の変更からマイグレーションの SQL を作る |

@@ -12,6 +12,7 @@
 		"format": "biome format --write .",
 		"test": "vitest",
 		"e2e": "playwright test",
+		"api-test": "cd bruno && bru run --env local",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio"

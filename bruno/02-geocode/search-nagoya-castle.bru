@@ -1,0 +1,25 @@
+meta {
+  name: 名古屋城を探す
+  type: http
+  seq: 1
+}
+
+docs {
+  地図の中心を名古屋にして検索する（ORS の利用回数を2回使う）．
+}
+
+get {
+  url: {{baseUrl}}/api/geocode?q=名古屋城&lat=35.18&lng=136.91
+  body: none
+  auth: none
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("先頭が名古屋城", function () {
+    expect(res.body.places[0].name).to.contain("名古屋城");
+  });
+}

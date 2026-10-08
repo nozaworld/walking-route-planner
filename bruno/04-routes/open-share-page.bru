@@ -1,0 +1,25 @@
+meta {
+  name: 共有ページを開く
+  type: http
+  seq: 7
+}
+
+docs {
+  共有中なら，ログインしていない人も見られる．
+}
+
+get {
+  url: {{baseUrl}}/r/{{routeId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("ページのタイトルにルート名が入る", function () {
+    expect(res.body).to.contain("Bruno の散歩");
+  });
+}

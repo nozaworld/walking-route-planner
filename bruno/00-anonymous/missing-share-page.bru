@@ -1,0 +1,21 @@
+meta {
+  name: 存在しない共有ページ
+  type: http
+  seq: 2
+}
+
+docs {
+  存在しない ID の共有ページは 404．
+}
+
+get {
+  url: {{baseUrl}}/r/00000000-0000-4000-8000-000000000000
+  body: none
+  auth: none
+}
+
+tests {
+  test("404 を返す", function () {
+    expect(res.status).to.equal(404);
+  });
+}

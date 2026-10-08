@@ -1,0 +1,29 @@
+meta {
+  name: 削除後のセッション
+  type: http
+  seq: 2
+}
+
+docs {
+  アカウントを消したらセッションもなくなる．
+}
+
+get {
+  url: {{baseUrl}}/api/auth/get-session
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("ログインしていない状態になる", function () {
+    expect(res.body).to.equal(null);
+  });
+}

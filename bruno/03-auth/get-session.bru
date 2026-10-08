@@ -1,0 +1,29 @@
+meta {
+  name: セッションの取得
+  type: http
+  seq: 2
+}
+
+docs {
+  登録した直後はログインした状態になっている．
+}
+
+get {
+  url: {{baseUrl}}/api/auth/get-session
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("ログイン中のユーザーが返る", function () {
+    expect(res.body.user.email).to.equal(bru.getVar("email"));
+  });
+}

@@ -1,0 +1,39 @@
+meta {
+  name: 正常な経由点
+  type: http
+  seq: 1
+}
+
+docs {
+  名古屋駅から名古屋城まで．ORS と国土地理院を実際に呼ぶ（ORS の利用回数を1回使う）．
+}
+
+post {
+  url: {{baseUrl}}/api/plan
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "waypoints": [
+      { "lat": 35.1709, "lng": 136.8815 },
+      { "lat": 35.1856, "lng": 136.8992 }
+    ]
+  }
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("経路と50点の標高を返す", function () {
+    expect(res.body.coords.length).to.be.above(1);
+    expect(res.body.profile.elevs.length).to.equal(50);
+  });
+}

@@ -1,0 +1,29 @@
+meta {
+  name: 一覧
+  type: http
+  seq: 4
+}
+
+docs {
+  保存した1件だけが返る．
+}
+
+get {
+  url: {{baseUrl}}/api/routes
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("1件ある", function () {
+    expect(res.body.routes.length).to.equal(1);
+  });
+}

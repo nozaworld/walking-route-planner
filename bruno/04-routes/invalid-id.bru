@@ -1,0 +1,26 @@
+meta {
+  name: 形式のおかしい ID
+  type: http
+  seq: 8
+}
+
+docs {
+  UUID でない ID は 404．
+}
+
+delete {
+  url: {{baseUrl}}/api/routes/abc
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: {{cookie}}
+  Origin: {{baseUrl}}
+}
+
+tests {
+  test("404 を返す", function () {
+    expect(res.status).to.equal(404);
+  });
+}

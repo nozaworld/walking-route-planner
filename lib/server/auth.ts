@@ -32,6 +32,8 @@ export const auth = betterAuth({
 	baseURL: baseURL(),
 	trustedOrigins: trustedOrigins(),
 	database: drizzleAdapter(db, { provider: "pg", schema }),
+	// アカウントの削除を許す（ログインしたばかりのセッションなら，パスワードの再入力なしで消せる）
+	user: { deleteUser: { enabled: true } },
 	emailAndPassword: {
 		enabled: true,
 		minPasswordLength: 8,

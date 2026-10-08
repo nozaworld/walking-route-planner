@@ -1,0 +1,31 @@
+meta {
+  name: アカウント削除
+  type: http
+  seq: 1
+}
+
+docs {
+  テスト用のアカウントを消す（DB にテストのデータを残さない）．
+}
+
+post {
+  url: {{baseUrl}}/api/auth/delete-user
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+body:json {
+  {}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+}

@@ -1,0 +1,25 @@
+meta {
+  name: 持ち主が非公開の共有ページを開く
+  type: http
+  seq: 5
+}
+
+docs {
+  非公開のルートでも，持ち主には見え，「非公開です」と案内が出る．
+}
+
+get {
+  url: {{baseUrl}}/r/{{routeId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+
+  test("非公開の案内が出る", function () {
+    expect(res.body).to.contain("このルートは非公開です");
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: 検索語が空
+  type: http
+  seq: 2
+}
+
+docs {
+  検索語がなければ 400（ORS は呼ばない）．
+}
+
+get {
+  url: {{baseUrl}}/api/geocode?q=
+  body: none
+  auth: none
+}
+
+tests {
+  test("400 を返す", function () {
+    expect(res.status).to.equal(400);
+  });
+}

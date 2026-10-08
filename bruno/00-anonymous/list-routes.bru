@@ -1,0 +1,21 @@
+meta {
+  name: 保存ルートの一覧
+  type: http
+  seq: 1
+}
+
+docs {
+  ログインしていなければ 401（Bruno は Cookie を自動で送るので，登録より前に流す）．
+}
+
+get {
+  url: {{baseUrl}}/api/routes
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 を返す", function () {
+    expect(res.status).to.equal(401);
+  });
+}

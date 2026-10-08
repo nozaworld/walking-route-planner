@@ -1,0 +1,33 @@
+meta {
+  name: 経由点が足りない
+  type: http
+  seq: 2
+}
+
+docs {
+  経由点が1点だけなら 400（ORS は呼ばない）．
+}
+
+post {
+  url: {{baseUrl}}/api/plan
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  { "waypoints": [{ "lat": 35.17, "lng": 136.88 }] }
+}
+
+tests {
+  test("400 を返す", function () {
+    expect(res.status).to.equal(400);
+  });
+  
+  test("日本語のエラーを返す", function () {
+    expect(res.body.error).to.be.a("string");
+  });
+}

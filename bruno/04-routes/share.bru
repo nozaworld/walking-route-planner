@@ -1,0 +1,35 @@
+meta {
+  name: 共有にする
+  type: http
+  seq: 6
+}
+
+docs {
+  共有に切り替える．
+}
+
+patch {
+  url: {{baseUrl}}/api/routes/{{routeId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+body:json {
+  { "shared": true }
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("共有中になる", function () {
+    expect(res.body.route.shared).to.equal(true);
+  });
+}

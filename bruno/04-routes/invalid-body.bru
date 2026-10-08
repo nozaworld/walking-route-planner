@@ -1,0 +1,31 @@
+meta {
+  name: 不正な本文
+  type: http
+  seq: 3
+}
+
+docs {
+  名前が空なら 400．
+}
+
+post {
+  url: {{baseUrl}}/api/routes
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+body:json {
+  { "name": "" }
+}
+
+tests {
+  test("400 を返す", function () {
+    expect(res.status).to.equal(400);
+  });
+}

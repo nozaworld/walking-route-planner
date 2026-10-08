@@ -1,0 +1,47 @@
+meta {
+  name: 保存
+  type: http
+  seq: 2
+}
+
+docs {
+  ルートを1件保存し，その ID を覚える．
+}
+
+post {
+  url: {{baseUrl}}/api/routes
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+body:json {
+  {
+    "name": "Bruno の散歩",
+    "coords": [{ "lat": 35.17, "lng": 136.9 }, { "lat": 35.18, "lng": 136.91 }],
+    "profile": {
+      "points": [{ "lat": 35.17, "lng": 136.9 }, { "lat": 35.18, "lng": 136.91 }],
+      "elevs": [10, 20]
+    },
+    "stats": { "dist": 1400, "gain": 10, "loss": 0, "walkKcal": 60, "walkMin": 17, "bikeKcal": 30, "bikeMin": 5 }
+  }
+}
+
+script:post-response {
+  bru.setVar("routeId", res.body.route?.id);
+}
+
+tests {
+  test("201 を返す", function () {
+    expect(res.status).to.equal(201);
+  });
+  
+  test("最初は非公開", function () {
+    expect(res.body.route.shared).to.equal(false);
+  });
+}
