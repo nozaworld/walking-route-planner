@@ -186,9 +186,13 @@ export function Planner() {
 				<h1 className="font-bold text-lg tracking-wide">
 					ルート疲労度プランナー
 				</h1>
-				<label className="ml-auto flex items-center gap-2 text-sm">
+				<label
+					htmlFor="weight"
+					className="ml-auto flex items-center gap-2 text-sm"
+				>
 					体重
 					<Input
+						id="weight"
 						type="number"
 						inputMode="decimal"
 						min={20}
