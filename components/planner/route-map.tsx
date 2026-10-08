@@ -23,6 +23,7 @@ import {
 import type { LatLng } from "@/lib/geo";
 import type { Place } from "@/lib/geocode";
 import type { PanelSize } from "@/lib/storage";
+import { SmoothWheelZoom } from "./smooth-wheel-zoom";
 
 /** 初期表示の中心（名古屋付近） */
 const INITIAL_CENTER: PointTuple = [35.18, 136.91];
@@ -75,6 +76,9 @@ export default function RouteMap({
 			center={INITIAL_CENTER}
 			zoom={13}
 			zoomControl={false}
+			// 倍率を整数に吸着させず，ホイールは SmoothWheelZoom で滑らかに動かす
+			zoomSnap={0}
+			scrollWheelZoom={false}
 			className="absolute inset-0 z-0 bg-background"
 		>
 			<TileLayer
@@ -86,6 +90,7 @@ export default function RouteMap({
 			/>
 			{/* 左上はパネルと重なるので，ズームボタンは右上に置く */}
 			<ZoomControl position="topright" />
+			<SmoothWheelZoom />
 			<ClickHandler onMapClick={onMapClick} />
 			<CenterReporter onCenterChange={onCenterChange} />
 			<FlyToPlace place={place} panelSize={panelSize} />
@@ -171,7 +176,9 @@ function FitToRoute({
 		if (!route || route.length < 2) return;
 		const desktop = window.matchMedia(DESKTOP_QUERY).matches;
 		const sheetHeight = (window.innerHeight * panelSize.height) / 100;
-		map.fitBounds(latLngBounds(route), {
+		// 一気に切り替えず，なめらかに移動しながら合わせる
+		map.flyToBounds(latLngBounds(route), {
+			duration: 1,
 			paddingTopLeft: desktop ? [panelSize.width + PANEL_GAP, 40] : [24, 24],
 			paddingBottomRight: desktop ? [60, 40] : [24, sheetHeight + 16],
 		});
