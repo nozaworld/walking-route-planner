@@ -111,7 +111,7 @@ npm run dev            # http://localhost:3000
 | `npm test` | Vitest でユニットテスト |
 | `npm run e2e` | Playwright で E2E テスト（API は差し替えるのでキー不要） |
 | `npm run lint` / `npm run format` | Biome でチェック・整形 |
-| `npm run typecheck` | TypeScript の型チェック |
+| `npm run typecheck` | ルートの型を生成（`next typegen`）してから TypeScript の型チェック |
 
 ## CI
 
