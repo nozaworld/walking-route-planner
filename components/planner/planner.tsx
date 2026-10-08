@@ -27,6 +27,7 @@ import { ElevationProfile } from "./elevation-profile";
 import { SaveRouteDialog } from "./save-route-dialog";
 import { SavedRouteList } from "./saved-route-list";
 import { StatsSummary } from "./stats-summary";
+import { ThemeToggle } from "./theme-toggle";
 
 // Leaflet は window に依存するので，ブラウザでのみ読み込む
 const RouteMap = dynamic(() => import("./route-map"), {
@@ -205,6 +206,7 @@ export function Planner() {
 					/>
 					kg
 				</label>
+				<ThemeToggle />
 			</header>
 
 			<div className="flex min-h-0 flex-1 flex-col md:flex-row">

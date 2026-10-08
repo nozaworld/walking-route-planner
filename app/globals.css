@@ -9,6 +9,9 @@
 	--color-foreground: var(--foreground);
 	--font-sans: var(--font-sans);
 	--font-mono: var(--font-geist-mono);
+	--font-serif: var(--font-serif);
+	--color-shu: var(--shu);
+	--color-matcha: var(--matcha);
 	--font-heading: var(--font-sans);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
@@ -48,73 +51,82 @@
 	--radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * 和風モダンの配色．
+ * 生成り（背景）・墨（文字）・藍（主色）・朱（差し色）・抹茶（補助）を基本にする．
+ */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: #3f5d4c; /* 旧版のモスグリーン */
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: #3f5d4c;
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
+	--background: #f3eee3; /* 生成り */
+	--foreground: #24221d; /* 墨 */
+	--card: #fbf8f1;
+	--card-foreground: #24221d;
+	--popover: #fbf8f1;
+	--popover-foreground: #24221d;
+	--primary: #1f3a5f; /* 藍 */
+	--primary-foreground: #f7f3ea;
+	--secondary: #ebe4d6;
+	--secondary-foreground: #24221d;
+	--muted: #ebe4d6;
+	--muted-foreground: #6c6454;
+	--accent: #e6dfcf;
+	--accent-foreground: #24221d;
+	--destructive: #b23a2a;
+	--border: #ddd3bf;
+	--input: #d6cbb5;
+	--ring: #1f3a5f;
+	--shu: #c2462d; /* 朱 */
+	--matcha: #6b8a4e; /* 抹茶 */
+	--chart-1: #1f3a5f;
+	--chart-2: #c2462d;
+	--chart-3: #6b8a4e;
+	--chart-4: #b8862f;
+	--chart-5: #6c6454;
 	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
+	--sidebar: #fbf8f1;
+	--sidebar-foreground: #24221d;
+	--sidebar-primary: #1f3a5f;
+	--sidebar-primary-foreground: #f7f3ea;
+	--sidebar-accent: #e6dfcf;
+	--sidebar-accent-foreground: #24221d;
+	--sidebar-border: #ddd3bf;
+	--sidebar-ring: #1f3a5f;
 }
 
+/* 暗いモード：墨色の地に生成りの文字，藍と朱は明るめにする */
 .dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.922 0 0);
-	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
-	--sidebar: oklch(0.205 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.556 0 0);
+	--background: #151719;
+	--foreground: #ece5d6;
+	--card: #1d2023;
+	--card-foreground: #ece5d6;
+	--popover: #1d2023;
+	--popover-foreground: #ece5d6;
+	--primary: #8eaedb;
+	--primary-foreground: #10151c;
+	--secondary: #2a2e33;
+	--secondary-foreground: #ece5d6;
+	--muted: #2a2e33;
+	--muted-foreground: #a39b8a;
+	--accent: #2f343a;
+	--accent-foreground: #ece5d6;
+	--destructive: #e0674d;
+	--border: #343940;
+	--input: #3c4249;
+	--ring: #8eaedb;
+	--shu: #e0674d;
+	--matcha: #9cbb7c;
+	--chart-1: #8eaedb;
+	--chart-2: #e0674d;
+	--chart-3: #9cbb7c;
+	--chart-4: #d8aa55;
+	--chart-5: #a39b8a;
+	--sidebar: #1d2023;
+	--sidebar-foreground: #ece5d6;
+	--sidebar-primary: #8eaedb;
+	--sidebar-primary-foreground: #10151c;
+	--sidebar-accent: #2f343a;
+	--sidebar-accent-foreground: #ece5d6;
+	--sidebar-border: #343940;
+	--sidebar-ring: #8eaedb;
 }
 
 @layer base {
@@ -127,4 +139,94 @@
 	html {
 		@apply font-sans;
 	}
+}
+
+/*
+ * 青海波（せいがいは）の文様．パネルの見出しの背景に薄く敷く．
+ * Lea Verou の CSS3 Patterns Gallery の Seigaiha を元に，色を変数にした．
+ */
+@utility bg-seigaiha {
+	--seigaiha-bg: var(--card);
+	--seigaiha-fg: color-mix(in oklab, var(--primary) 14%, var(--card));
+	background-color: var(--seigaiha-bg);
+	background-image:
+		radial-gradient(
+			circle at 100% 150%,
+			var(--seigaiha-bg) 24%,
+			var(--seigaiha-fg) 24%,
+			var(--seigaiha-fg) 28%,
+			var(--seigaiha-bg) 28%,
+			var(--seigaiha-bg) 36%,
+			var(--seigaiha-fg) 36%,
+			var(--seigaiha-fg) 40%,
+			transparent 40%,
+			transparent
+		),
+		radial-gradient(
+			circle at 0 150%,
+			var(--seigaiha-bg) 24%,
+			var(--seigaiha-fg) 24%,
+			var(--seigaiha-fg) 28%,
+			var(--seigaiha-bg) 28%,
+			var(--seigaiha-bg) 36%,
+			var(--seigaiha-fg) 36%,
+			var(--seigaiha-fg) 40%,
+			transparent 40%,
+			transparent
+		),
+		radial-gradient(
+			circle at 50% 100%,
+			var(--seigaiha-fg) 10%,
+			var(--seigaiha-bg) 10%,
+			var(--seigaiha-bg) 23%,
+			var(--seigaiha-fg) 23%,
+			var(--seigaiha-fg) 30%,
+			var(--seigaiha-bg) 30%,
+			var(--seigaiha-bg) 43%,
+			var(--seigaiha-fg) 43%,
+			var(--seigaiha-fg) 50%,
+			var(--seigaiha-bg) 50%,
+			var(--seigaiha-bg) 63%,
+			var(--seigaiha-fg) 63%,
+			var(--seigaiha-fg) 71%,
+			transparent 71%,
+			transparent
+		),
+		radial-gradient(
+			circle at 100% 50%,
+			var(--seigaiha-fg) 5%,
+			var(--seigaiha-bg) 5%,
+			var(--seigaiha-bg) 15%,
+			var(--seigaiha-fg) 15%,
+			var(--seigaiha-fg) 20%,
+			var(--seigaiha-bg) 20%,
+			var(--seigaiha-bg) 29%,
+			var(--seigaiha-fg) 29%,
+			var(--seigaiha-fg) 34%,
+			var(--seigaiha-bg) 34%,
+			var(--seigaiha-bg) 44%,
+			var(--seigaiha-fg) 44%,
+			var(--seigaiha-fg) 49%,
+			transparent 49%,
+			transparent
+		),
+		radial-gradient(
+			circle at 0 50%,
+			var(--seigaiha-fg) 5%,
+			var(--seigaiha-bg) 5%,
+			var(--seigaiha-bg) 15%,
+			var(--seigaiha-fg) 15%,
+			var(--seigaiha-fg) 20%,
+			var(--seigaiha-bg) 20%,
+			var(--seigaiha-bg) 29%,
+			var(--seigaiha-fg) 29%,
+			var(--seigaiha-fg) 34%,
+			var(--seigaiha-bg) 34%,
+			var(--seigaiha-bg) 44%,
+			var(--seigaiha-fg) 44%,
+			var(--seigaiha-fg) 49%,
+			transparent 49%,
+			transparent
+		);
+	background-size: 48px 24px;
 }
