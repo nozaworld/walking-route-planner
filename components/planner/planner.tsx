@@ -4,7 +4,7 @@
  * ルート疲労度プランナーの画面全体．
  * 地図を画面いっぱいに広げ，操作パネルを PC では左に浮かせ，スマホでは下に置く．
  * 「描きはじめる → 地図をクリック → 確定」の流れを状態（Phase）で管理し，
- * 手順の案内・統計・断面図・保存済みルートをパネルの中に組み立てる．
+ * 手順の案内・統計・断面図・保存済みルート・ログインをパネルの中に組み立てる．
  */
 
 import { TriangleAlertIcon } from "lucide-react";
@@ -20,14 +20,13 @@ import type { Place } from "@/lib/geocode";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
 import {
 	loadPanelSize,
-	loadRoutes,
 	loadWeight,
 	type PanelSize,
 	type SavedRoute,
 	savePanelSize,
-	saveRoutes,
 	saveWeight,
 } from "@/lib/storage";
+import { AuthDialog } from "./auth-dialog";
 import { ElevationProfile } from "./elevation-profile";
 import { PanelHeader } from "./panel-header";
 import { PlaceSearch } from "./place-search";
@@ -36,6 +35,7 @@ import { SaveRouteDialog } from "./save-route-dialog";
 import { SavedRouteList } from "./saved-route-list";
 import { StatsSummary } from "./stats-summary";
 import { type Phase, StepGuide } from "./step-guide";
+import { useSavedRoutes } from "./use-saved-routes";
 
 // 地図（MapLibre）は window と WebGL に依存するので，ブラウザでのみ読み込む
 const RouteMap = dynamic(() => import("./route-map"), {
@@ -65,8 +65,10 @@ export function Planner() {
 	const [error, setError] = useState<string | null>(null);
 	// 入力途中（空欄など）も表示できるよう，体重は文字列のまま持つ
 	const [weightInput, setWeightInput] = useState(String(DEFAULT_WEIGHT));
-	const [routes, setRoutes] = useState<SavedRoute[]>([]);
+	// 保存ルート（ゲストはブラウザ，ログイン中はクラウド）
+	const saved = useSavedRoutes();
 	const [saveOpen, setSaveOpen] = useState(false);
+	const [authOpen, setAuthOpen] = useState(false);
 	const [tab, setTab] = useState<Tab>("plan");
 	const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL);
 	// 検索で選んだ場所．同じ場所を選び直しても移動するよう key を持たせる
@@ -78,7 +80,6 @@ export function Planner() {
 	useEffect(() => {
 		const saved = loadWeight();
 		if (saved !== null) setWeightInput(String(saved));
-		setRoutes(loadRoutes());
 		const panel = loadPanelSize();
 		if (panel) setPanelSize(panel);
 	}, []);
@@ -167,33 +168,32 @@ export function Planner() {
 		setTab("plan");
 	}
 
-	/** 一覧を画面と localStorage の両方で更新する */
-	function updateRoutes(next: SavedRoute[]) {
-		setRoutes(next);
-		saveRoutes(next);
-	}
-
-	/** 表示中のルートを，入力された名前で一覧の先頭に保存する */
-	function handleSave(name: string) {
+	/** 表示中のルートを，入力された名前で保存する．失敗したらダイアログを開いたままにする */
+	async function handleSave(name: string) {
 		if (!plan || !stats) return;
-		const route: SavedRoute = {
-			id: crypto.randomUUID(),
-			name,
-			stats,
-			coords: plan.coords,
-			profile: plan.profile,
-			savedAt: Date.now(),
-		};
-		updateRoutes([route, ...routes]);
-		setViewingId(route.id);
-		setSaveOpen(false);
-		toast.success(`「${name}」を保存しました`);
+		try {
+			const route = await saved.save({
+				name,
+				stats,
+				coords: plan.coords,
+				profile: plan.profile,
+			});
+			setViewingId(route.id);
+			setSaveOpen(false);
+			toast.success(`「${name}」を保存しました`);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "保存に失敗しました．");
+		}
 	}
 
 	/** 保存済みルートを削除する．表示中なら保存前の扱いに戻す */
-	function handleDelete(id: string) {
-		updateRoutes(routes.filter((r) => r.id !== id));
-		if (viewingId === id) setViewingId(null);
+	async function handleDelete(id: string) {
+		try {
+			await saved.remove(id);
+			if (viewingId === id) setViewingId(null);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "削除に失敗しました．");
+		}
 	}
 
 	/** パネルの大きさを変えたら保存する */
@@ -269,7 +269,7 @@ export function Planner() {
 				/>
 				{/* 角丸からはみ出さないよう，中身はこの内側で切り取る */}
 				<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
-					<PanelHeader />
+					<PanelHeader onLoginClick={() => setAuthOpen(true)} />
 
 					<Tabs
 						value={tab}
@@ -282,7 +282,7 @@ export function Planner() {
 								<TabsTrigger value="saved">
 									保存済み
 									<span className="text-muted-foreground text-xs tabular-nums">
-										{routes.length}
+										{saved.routes.length}
 									</span>
 								</TabsTrigger>
 							</TabsList>
@@ -348,10 +348,15 @@ export function Planner() {
 							className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5"
 						>
 							<SavedRouteList
-								routes={routes}
+								source={saved.source}
+								routes={saved.routes}
+								localCount={saved.localCount}
 								activeId={viewingId}
 								onSelect={showSavedRoute}
 								onDelete={handleDelete}
+								onSetShared={saved.setShared}
+								onImport={saved.importLocal}
+								onLoginClick={() => setAuthOpen(true)}
 							/>
 						</TabsContent>
 					</Tabs>
@@ -366,9 +371,10 @@ export function Planner() {
 			<SaveRouteDialog
 				open={saveOpen}
 				onOpenChange={setSaveOpen}
-				defaultName={`ルート ${routes.length + 1}`}
+				defaultName={`ルート ${saved.routes.length + 1}`}
 				onSave={handleSave}
 			/>
+			<AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
 		</main>
 	);
 }

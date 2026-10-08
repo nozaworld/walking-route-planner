@@ -168,3 +168,72 @@ test("地名を検索して選ぶと，その場所に目印が立つ", async ({
 	await expect(results).toBeHidden();
 	await expect(page.getByTestId("place-marker")).toHaveText("名古屋城");
 });
+
+test("ログイン中は保存済みルートをクラウドから読み，共有を切り替えられる", async ({
+	page,
+}) => {
+	// ログイン状態と保存ルートの API を差し替えて，DB なしでログイン中の画面を再現する
+	const now = new Date().toISOString();
+	await page.route("**/api/auth/get-session", (route) =>
+		route.fulfill({
+			json: {
+				session: {
+					id: "s1",
+					userId: "u1",
+					token: "t",
+					expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+					createdAt: now,
+					updatedAt: now,
+				},
+				user: {
+					id: "u1",
+					name: "野沢",
+					email: "test@example.com",
+					emailVerified: false,
+					createdAt: now,
+					updatedAt: now,
+				},
+			},
+		}),
+	);
+	const cloudRoute = {
+		id: "11111111-1111-4111-8111-111111111111",
+		name: "雲の上の散歩",
+		shared: false,
+		savedAt: Date.now(),
+		coords: FAKE_PLAN.coords,
+		profile: FAKE_PLAN.profile,
+		stats: {
+			dist: 1400,
+			gain: 20,
+			loss: 0,
+			walkKcal: 60,
+			walkMin: 17,
+			bikeKcal: 30,
+			bikeMin: 5,
+		},
+	};
+	await page.route("**/api/routes", (route) =>
+		route.fulfill({ json: { routes: [cloudRoute] } }),
+	);
+	await page.route(`**/api/routes/${cloudRoute.id}`, (route) =>
+		route.fulfill({ json: { route: { ...cloudRoute, shared: true } } }),
+	);
+	await page.reload();
+
+	await expect(
+		page.getByRole("button", { name: "野沢のアカウント" }),
+	).toBeVisible();
+	await page.getByRole("tab", { name: /保存済み/ }).click();
+	await expect(page.getByText("雲の上の散歩")).toBeVisible();
+	// ゲスト向けの案内は出ない
+	await expect(
+		page.getByText("いまはこのブラウザに保存しています"),
+	).toBeHidden();
+
+	await page.getByRole("button", { name: "非公開" }).click();
+	await expect(page.getByRole("button", { name: "共有中" })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "リンクをコピー" }),
+	).toBeVisible();
+});

@@ -7,8 +7,8 @@
 import { AccountMenu } from "./account-menu";
 import { ThemeToggle } from "./theme-toggle";
 
-/** ロゴとアプリ名の帯 */
-export function PanelHeader() {
+/** ロゴとアプリ名の帯．onLoginClick はログインのダイアログを開く */
+export function PanelHeader({ onLoginClick }: { onLoginClick: () => void }) {
 	return (
 		<header className="relative shrink-0 overflow-hidden border-b">
 			{/* 文様は右へ行くほど消えるようにして，文字の邪魔をしない */}
@@ -33,7 +33,7 @@ export function PanelHeader() {
 				</div>
 				<div className="flex shrink-0 items-center gap-1">
 					<ThemeToggle />
-					<AccountMenu />
+					<AccountMenu onLoginClick={onLoginClick} />
 				</div>
 			</div>
 		</header>

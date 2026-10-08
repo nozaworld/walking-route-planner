@@ -7,7 +7,6 @@
  */
 
 import { LogInIcon, LogOutIcon } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,26 +19,19 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut, useSession } from "@/lib/auth-client";
-import { AuthDialog } from "./auth-dialog";
 
 /**
  * ログイン状態に応じたボタンとメニュー．
- * ダイアログはログイン状態に関係なく常に置いておく（ログインした瞬間に一緒に消すと，
- * 閉じる処理が終わらず，画面のほかの部分を操作できないままになるため）．
+ * ログインのダイアログは画面全体（Planner）が持ち，保存済みタブの案内からも開けるようにする．
  */
-export function AccountMenu() {
+export function AccountMenu({ onLoginClick }: { onLoginClick: () => void }) {
 	const { data: session, isPending } = useSession();
-	const [dialogOpen, setDialogOpen] = useState(false);
-
 	return (
-		<>
-			<AccountButton
-				session={session}
-				isPending={isPending}
-				onLoginClick={() => setDialogOpen(true)}
-			/>
-			<AuthDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-		</>
+		<AccountButton
+			session={session}
+			isPending={isPending}
+			onLoginClick={onLoginClick}
+		/>
 	);
 }
 
