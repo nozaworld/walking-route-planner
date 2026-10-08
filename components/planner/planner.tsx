@@ -9,13 +9,14 @@
 
 import { TriangleAlertIcon } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
+import type { Place } from "@/lib/geocode";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
 import {
 	loadPanelSize,
@@ -29,6 +30,7 @@ import {
 } from "@/lib/storage";
 import { ElevationProfile } from "./elevation-profile";
 import { PanelHeader } from "./panel-header";
+import { PlaceSearch } from "./place-search";
 import { ResizeHandle } from "./resize-handle";
 import { SaveRouteDialog } from "./save-route-dialog";
 import { SavedRouteList } from "./saved-route-list";
@@ -67,6 +69,10 @@ export function Planner() {
 	const [saveOpen, setSaveOpen] = useState(false);
 	const [tab, setTab] = useState<Tab>("plan");
 	const [panelSize, setPanelSize] = useState<PanelSize>(DEFAULT_PANEL);
+	// 検索で選んだ場所．同じ場所を選び直しても移動するよう key を持たせる
+	const [place, setPlace] = useState<(Place & { key: number }) | null>(null);
+	// 地図の中心（検索で近い候補を優先するのに使う．描画には使わないので ref）
+	const mapCenter = useRef<LatLng | null>(null);
 
 	// localStorage はサーバーでは読めないので，表示後に読み込む
 	useEffect(() => {
@@ -213,12 +219,23 @@ export function Planner() {
 				route={plan?.coords ?? null}
 				fitKey={fitKey}
 				panelSize={panelSize}
+				place={place}
 				onMapClick={handleMapClick}
+				onCenterChange={(c) => {
+					mapCenter.current = c;
+				}}
+			/>
+
+			{/* PC はパネルの右，スマホは画面の上端（右上のズームボタンは避ける） */}
+			<PlaceSearch
+				getCenter={() => mapCenter.current}
+				onSelect={(p) => setPlace({ ...p, key: Date.now() })}
+				className="absolute top-4 right-16 left-4 z-[650] md:right-auto md:left-[calc(var(--panel-w)+2rem)] md:w-[min(420px,calc(100%-var(--panel-w)-7rem))]"
 			/>
 
 			{/* 描いている間は，地図の上に操作のヒントを出す */}
 			{phase === "drawing" && (
-				<div className="pointer-events-none absolute top-4 left-1/2 z-[500] -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+var(--panel-w)/2+0.5rem)]">
+				<div className="pointer-events-none absolute top-[4.5rem] left-1/2 z-[500] -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+var(--panel-w)/2+0.5rem)]">
 					地図をクリックして道をたどる
 				</div>
 			)}

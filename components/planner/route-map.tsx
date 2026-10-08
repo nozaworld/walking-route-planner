@@ -2,8 +2,8 @@
 
 /**
  * 画面いっぱいに広げる Leaflet（react-leaflet）の地図．
- * 国土地理院の淡色地図の上に，経由点・確定前の仮の線・確定したルートを描き，
- * 地図のクリックを親に伝える．
+ * 国土地理院の淡色地図の上に，経由点・確定前の仮の線・確定したルート・検索した場所を描き，
+ * 地図のクリックと中心の位置を親に伝える．
  * Leaflet は window に依存するため，next/dynamic の ssr: false で読み込むこと．
  */
 
@@ -15,11 +15,13 @@ import {
 	MapContainer,
 	Polyline,
 	TileLayer,
+	Tooltip,
 	useMap,
 	useMapEvents,
 	ZoomControl,
 } from "react-leaflet";
 import type { LatLng } from "@/lib/geo";
+import type { Place } from "@/lib/geocode";
 import type { PanelSize } from "@/lib/storage";
 
 /** 初期表示の中心（名古屋付近） */
@@ -51,7 +53,11 @@ type Props = {
 	fitKey: string | null;
 	/** 操作パネルの大きさ（ルートをパネルに隠さないための余白の計算に使う） */
 	panelSize: PanelSize;
+	/** 検索で選んだ場所．key が変わるたびにその場所へ移動する */
+	place: (Place & { key: number }) | null;
 	onMapClick: (p: LatLng) => void;
+	/** 地図を動かし終えるたびに中心の位置を伝える */
+	onCenterChange: (center: LatLng) => void;
 };
 
 /** 地図本体．経由点・仮の線・確定ルートを重ねて描く */
@@ -60,7 +66,9 @@ export default function RouteMap({
 	route,
 	fitKey,
 	panelSize,
+	place,
 	onMapClick,
+	onCenterChange,
 }: Props) {
 	return (
 		<MapContainer
@@ -79,6 +87,19 @@ export default function RouteMap({
 			{/* 左上はパネルと重なるので，ズームボタンは右上に置く */}
 			<ZoomControl position="topright" />
 			<ClickHandler onMapClick={onMapClick} />
+			<CenterReporter onCenterChange={onCenterChange} />
+			<FlyToPlace place={place} panelSize={panelSize} />
+			{place && (
+				<CircleMarker
+					center={place}
+					radius={9}
+					pathOptions={{ className: "place-marker", weight: 3, fillOpacity: 1 }}
+				>
+					<Tooltip permanent direction="top" offset={[0, -10]}>
+						{place.name}
+					</Tooltip>
+				</CircleMarker>
+			)}
 			<FitToRoute route={route} fitKey={fitKey} panelSize={panelSize} />
 			{/* 確定前は打った点を破線で結ぶ */}
 			{!route && waypoints.length > 1 && (
@@ -155,5 +176,56 @@ function FitToRoute({
 			paddingBottomRight: desktop ? [60, 40] : [24, sheetHeight + 16],
 		});
 	}, [fitKey, map]);
+	return null;
+}
+
+/** 表示範囲が変わるたびに（と最初に一度）地図の中心を親に伝える */
+function CenterReporter({
+	onCenterChange,
+}: {
+	onCenterChange: (center: LatLng) => void;
+}) {
+	const map = useMap();
+	useMapEvents({
+		moveend: () => {
+			const c = map.getCenter();
+			onCenterChange({ lat: c.lat, lng: c.lng });
+		},
+	});
+	// biome-ignore lint/correctness/useExhaustiveDependencies: 表示した直後に一度だけ伝える
+	useEffect(() => {
+		const c = map.getCenter();
+		onCenterChange({ lat: c.lat, lng: c.lng });
+	}, [map]);
+	return null;
+}
+
+/**
+ * 検索で場所を選んだら，その場所へなめらかに移動する．
+ * PC ではパネルに隠れないよう，見えている範囲の中央に来るようずらす．
+ */
+function FlyToPlace({
+	place,
+	panelSize,
+}: {
+	place: (Place & { key: number }) | null;
+	panelSize: PanelSize;
+}) {
+	const map = useMap();
+	// biome-ignore lint/correctness/useExhaustiveDependencies: 場所を選び直したとき（key が変わったとき）だけ動かす
+	useEffect(() => {
+		if (!place) return;
+		const zoom = Math.max(map.getZoom(), 16);
+		const desktop = window.matchMedia(DESKTOP_QUERY).matches;
+		// パネルの分だけ中心をずらす（PC は左，スマホは下にパネルがある）
+		const offset = desktop
+			? [-(panelSize.width + PANEL_GAP) / 2, 0]
+			: [0, (window.innerHeight * panelSize.height) / 100 / 2];
+		const target = map.unproject(
+			map.project(place, zoom).add(offset as PointTuple),
+			zoom,
+		);
+		map.flyTo(target, zoom, { duration: 1.2 });
+	}, [place?.key, map]);
 	return null;
 }

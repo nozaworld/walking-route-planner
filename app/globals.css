@@ -259,11 +259,27 @@
 	stroke: var(--route-casing);
 	fill: var(--route);
 }
+.place-marker {
+	stroke: var(--shu);
+	fill: var(--route-casing);
+}
 
 /* 暗いモードでは淡色地図を反転し，彩度を落として墨色の地になじませる */
 .dark .map-tiles {
 	filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85)
 		saturate(0.5);
+}
+
+/* 検索した場所の名前の吹き出し */
+.leaflet-tooltip {
+	border-color: var(--border);
+	background-color: var(--card);
+	color: var(--foreground);
+	font-weight: 700;
+	box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+}
+.leaflet-tooltip-top::before {
+	border-top-color: var(--card);
 }
 
 .dark .leaflet-control-attribution,

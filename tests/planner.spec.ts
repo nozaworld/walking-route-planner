@@ -132,3 +132,39 @@ test("パネルの幅を変えられ，再読み込み後も保たれる", async
 		page.getByRole("separator", { name: "パネルの幅を変える" }),
 	).toHaveAttribute("aria-valuenow", "460");
 });
+
+test("地名を検索して選ぶと，その場所に目印が立つ", async ({ page }) => {
+	await page.route("https://cyberjapandata.gsi.go.jp/xyz/**", (route) =>
+		route.abort(),
+	);
+	await page.route("**/api/geocode?**", (route) =>
+		route.fulfill({
+			json: {
+				places: [
+					{
+						name: "名古屋城",
+						area: "名古屋市，愛知",
+						lat: 35.1856,
+						lng: 136.8992,
+					},
+					{
+						name: "名古屋駅",
+						area: "名古屋市，愛知",
+						lat: 35.1709,
+						lng: 136.8815,
+					},
+				],
+			},
+		}),
+	);
+
+	const box = page.getByRole("combobox", { name: "地名や駅名で探す" });
+	await box.fill("名古屋");
+	await box.press("Enter");
+	const results = page.getByRole("list", { name: "検索結果" });
+	await expect(results.getByRole("button")).toHaveCount(2);
+
+	await results.getByRole("button", { name: /名古屋城/ }).click();
+	await expect(results).toBeHidden();
+	await expect(page.locator(".leaflet-tooltip")).toHaveText("名古屋城");
+});
