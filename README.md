@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ルート疲労度プランナー
 
-## Getting Started
+地図上をクリックして描いた徒歩ルートについて，**距離・獲得標高・所要時間・消費カロリー**を，坂の勾配を考慮して見積もる Web アプリです．
 
-First, run the development server:
+![画面のスクリーンショット](docs/screenshot.png)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 主な機能
+
+- **ルートを描く**：地図をクリックして経由点を打つと，道路に沿った徒歩ルートに変換します（OpenRouteService）．
+- **標高断面図**：国土地理院の標高データから，ルートの起伏を断面図で表示します．
+- **疲労度の見積もり**：勾配ごとの歩行エネルギーと歩行速度から，消費カロリーと所要時間を計算します．自転車で走った場合の概算も出します．
+- **体重を反映**：体重を変えると，通信せずにその場で計算し直します．
+- **ルートの保存**：名前を付けてブラウザに保存し，一覧からいつでも表示・削除できます．
+- **スマホ対応**：狭い画面では地図・一覧・操作バーを縦に並べます．
+
+## 計算モデル
+
+ルートを約50点に間引き，隣り合う2点ごとの区間で勾配 *i*（標高差 ÷ 水平距離）を求めて積算します．
+
+| 項目 | モデル |
+|---|---|
+| 歩行のエネルギーコスト | Minetti et al. (2002) の近似式 *C(i)* = 280.5*i*⁵ − 58.7*i*⁴ − 76.8*i*³ + 51.9*i*² + 19.6*i* + 2.5 [J/kg/m] |
+| 歩行速度 | 平地 5 km/h．上りでも下りでも遅くなり，緩い下りが最も速い |
+| 自転車 | 平地 15 km/h を基準とした簡易モデル（車体 10 kg を含む） |
+
+消費カロリー = Σ（区間距離 × *C(i)* × 体重）÷ 4184 です．式は `lib/energy-model.ts` にあります．
+
+## 技術構成
+
+| 分類 | 使っているもの |
+|---|---|
+| フレームワーク | Next.js 16（App Router），React 19，TypeScript |
+| UI | Tailwind CSS v4，shadcn/ui（Base UI），lucide-react，sonner |
+| 地図 | Leaflet，react-leaflet，OpenStreetMap |
+| 外部 API | OpenRouteService（徒歩ルート），国土地理院 標高 API |
+| 入力検証 | zod |
+| テスト | Vitest（ユニット），Playwright（E2E） |
+| Lint・整形 | Biome |
+| 公開 | Vercel |
+
+### 処理の流れ
+
+```
+ブラウザ ──経由点──▶ POST /api/plan（Route Handler）
+                       ├─ OpenRouteService：経由点を1回のリクエストで徒歩ルートに変換
+                       └─ 国土地理院：ルートを50点に間引き，標高を10本ずつ並列に取得（キャッシュあり）
+ブラウザ ◀──経路と標高── 
+  └─ 体重を使って消費カロリーと所要時間を計算し，地図・断面図・統計を描く
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+API キーはサーバー側の Route Handler でのみ使い，ブラウザには渡しません．
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### ディレクトリ構成
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+  page.tsx                  トップページ
+  api/plan/route.ts         経路と標高を返す API
+components/planner/         画面の部品（地図，断面図，統計，保存一覧，保存ダイアログ）
+lib/
+  geo.ts                    距離計算と点列の間引き
+  energy-model.ts           エネルギー・速度モデルと統計の計算
+  plan.ts                   API の入出力の型と検証スキーマ
+  storage.ts                localStorage への保存
+  server/                   OpenRouteService と国土地理院の呼び出し（サーバー専用）
+tests/                      Playwright の E2E テスト
+docs/design.md              設計書
+```
 
-## Learn More
+## 手元で動かす
 
-To learn more about Next.js, take a look at the following resources:
+Node.js 22.22 以上（または 24.15 以上）が必要です．
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+cp .env.example .env   # ORS_API_KEY を書き込む
+npm run dev            # http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 環境変数
 
-## Deploy on Vercel
+| 変数 | 必須 | 説明 |
+|---|---|---|
+| `ORS_API_KEY` | ✅ | [OpenRouteService](https://openrouteservice.org/) の API キー．無料枠は経路探索 2,000回/日 |
+| `DATABASE_URL` | | Postgres の接続先（ログイン・DB 保存の実装後に使う） |
+| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | | 認証の設定（同上） |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### スクリプト
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| コマンド | 内容 |
+|---|---|
+| `npm run dev` | 開発サーバーを起動 |
+| `npm run build` / `npm run start` | 本番ビルドと起動 |
+| `npm test` | Vitest でユニットテスト |
+| `npm run e2e` | Playwright で E2E テスト（API は差し替えるのでキー不要） |
+| `npm run lint` / `npm run format` | Biome でチェック・整形 |
+
+## 旧版からの改善
+
+このアプリは，素の JavaScript で書いた旧版（`_prev/`）を Next.js に移植したものです．移植の際に次の点を直しました．
+
+- **徒歩ルートの修正**：旧版の経路探索（OSRM のデモサーバー）は `foot` の指定を無視して車のルートを返していたため，OpenRouteService の徒歩ルートに置き換えました．
+- **高速化**：外部 API を最大110回順番に呼んでいたのを，経路は1回，標高は並列取得にしました．
+- **体重の変更**：変更するたびに標高を取り直していたのを，取得済みのデータで計算し直すだけにしました．
+- **細かな不具合**：間引きで終点が欠ける，59.6分が「60分」と表示される，欠けた標高を 0m 扱いして断面図に段差ができる，を修正しました．
+
+## 今後の予定
+
+- ログインと DB へのルート保存，URL での共有
+- 「最短」と「いちばん楽」なルートの比較
+- 勾配でルートを色分けし，断面図と地図の位置を連動
+- 目標の消費カロリーや時間から周回ルートを作る逆算モード
+- 自転車用ルートでの計算
+
+## クレジット
+
+- 地図：© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
+- 経路探索：[openrouteservice](https://openrouteservice.org/)（HeiGIT）
+- 標高：[国土地理院 標高 API](https://maps.gsi.go.jp/development/elevation_s.html)
+- 歩行エネルギーモデル：Minetti, A. E. et al. (2002). Energy cost of walking and running at extreme uphill and downhill slopes. *Journal of Applied Physiology*, 93(3), 1039–1046.
