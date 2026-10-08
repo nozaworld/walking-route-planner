@@ -1,6 +1,6 @@
 /**
  * 標高断面図．
- * 横軸に始点からの距離，縦軸に標高をとった SVG を地図の下端に重ねて表示する．
+ * 横軸に始点からの距離，縦軸に標高をとった SVG を，操作パネルの中に表示する．
  */
 
 import { cumulativeDistances, type LatLng } from "@/lib/geo";
@@ -11,7 +11,7 @@ const H = 90;
 /** 線が上下の端に張り付かないための余白 */
 const PAD_T = 6;
 const PAD_B = 14;
-const COLOR = "#2766c9";
+const COLOR = "var(--primary)";
 
 type Props = {
 	points: LatLng[];
@@ -19,10 +19,7 @@ type Props = {
 	elevs: number[];
 };
 
-/**
- * 点列と標高から断面図を描く．2点未満なら何も描かない．
- * 地図右下のクレジット表記を隠さないよう，下端から少し浮かせて置く（bottom-6）．
- */
+/** 点列と標高から断面図を描く．2点未満なら何も描かない */
 export function ElevationProfile({ points, elevs }: Props) {
 	if (points.length < 2) return null;
 
@@ -44,7 +41,7 @@ export function ElevationProfile({ points, elevs }: Props) {
 	const area = `${line} L ${x(total)} ${H - PAD_B} L 0 ${H - PAD_B} Z`;
 
 	return (
-		<div className="absolute right-2.5 bottom-6 left-2.5 z-[500] rounded-md border bg-card/95 px-2.5 pt-1.5 pb-1 shadow-sm">
+		<div className="rounded-lg border bg-card px-3 pt-2 pb-1.5">
 			<div className="flex justify-between text-[11px] text-muted-foreground">
 				<span>標高断面図</span>
 				<span>{(total / 1000).toFixed(2)} km</span>

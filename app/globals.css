@@ -230,3 +230,44 @@
 		);
 	background-size: 48px 24px;
 }
+
+/* Leaflet の地図まわりを和風の配色とフォントに合わせる */
+.leaflet-container {
+	font-family: inherit;
+}
+
+/* ルートの線と点の色（route-map.tsx の className と対応） */
+:root {
+	--route: #1f3a5f;
+	--route-casing: #ffffff;
+}
+.dark {
+	--route: #9dbcf0;
+	--route-casing: #0d0f11;
+}
+.route-line {
+	stroke: var(--route);
+}
+.route-casing {
+	stroke: var(--route-casing);
+}
+.route-start {
+	stroke: var(--route-casing);
+	fill: var(--shu);
+}
+.route-point {
+	stroke: var(--route-casing);
+	fill: var(--route);
+}
+
+/* 暗いモードでは淡色地図を反転し，彩度を落として墨色の地になじませる */
+.dark .map-tiles {
+	filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85)
+		saturate(0.5);
+}
+
+.dark .leaflet-control-attribution,
+.dark .leaflet-bar a {
+	background-color: var(--card);
+	color: var(--muted-foreground);
+}

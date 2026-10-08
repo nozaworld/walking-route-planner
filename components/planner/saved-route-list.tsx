@@ -1,9 +1,9 @@
 /**
- * 保存済みルートの一覧．
- * PC では地図の右，スマホでは地図の下に置く．項目を押すと地図に表示し，ゴミ箱で削除する．
+ * 保存済みルートの一覧（パネルの「保存済み」タブの中身）．
+ * 項目を押すと地図に表示し，ゴミ箱で削除する．
  */
 
-import { Trash2Icon } from "lucide-react";
+import { BookmarkIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SavedRoute } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,14 @@ type Props = {
 	onDelete: (id: string) => void;
 };
 
+/** 保存した日付を「10月8日」の形にする */
+function formatDate(ms: number): string {
+	return new Date(ms).toLocaleDateString("ja-JP", {
+		month: "long",
+		day: "numeric",
+	});
+}
+
 /** 保存済みルートを一覧にする．なければその旨を出す */
 export function SavedRouteList({
 	routes,
@@ -23,56 +31,54 @@ export function SavedRouteList({
 	onSelect,
 	onDelete,
 }: Props) {
-	return (
-		<aside className="flex max-h-[35vh] min-h-0 flex-col border-t bg-card md:max-h-none md:w-75 md:border-t-0 md:border-l">
-			<h2 className="border-b px-4 pt-3.5 pb-2 font-bold text-sm">
-				保存したルート
-			</h2>
-			<div className="flex-1 overflow-y-auto p-2.5">
-				{routes.length === 0 ? (
-					<p className="px-1 py-1.5 text-muted-foreground text-xs">
-						まだ保存されたルートはありません．
-					</p>
-				) : (
-					<ul className="flex flex-col gap-2">
-						{routes.map((r) => (
-							<li
-								key={r.id}
-								className={cn(
-									"relative rounded-md border text-xs leading-relaxed transition-colors hover:border-primary",
-									r.id === activeId && "border-primary bg-muted",
-								)}
-							>
-								<button
-									type="button"
-									onClick={() => onSelect(r)}
-									className="w-full p-2.5 pr-10 text-left"
-								>
-									<div className="font-bold text-sm">{r.name}</div>
-									<div>
-										{(r.stats.dist / 1000).toFixed(2)} km ／ 獲得標高{" "}
-										{Math.round(r.stats.gain)} m
-									</div>
-									<div>
-										徒歩 {Math.round(r.stats.walkKcal)} kcal ／ 自転車{" "}
-										{Math.round(r.stats.bikeKcal)} kcal
-									</div>
-								</button>
-								{/* 削除ボタンは項目のボタンの中に入れられないので重ねて置く */}
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									className="absolute top-1.5 right-1.5 text-destructive"
-									aria-label={`${r.name}を削除`}
-									onClick={() => onDelete(r.id)}
-								>
-									<Trash2Icon />
-								</Button>
-							</li>
-						))}
-					</ul>
-				)}
+	if (routes.length === 0) {
+		return (
+			<div className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground text-xs">
+				<BookmarkIcon className="size-6 opacity-50" />
+				まだ保存されたルートはありません．
 			</div>
-		</aside>
+		);
+	}
+
+	return (
+		<ul className="flex flex-col gap-2">
+			{routes.map((r) => (
+				<li
+					key={r.id}
+					className={cn(
+						"relative rounded-lg border bg-card transition-colors hover:border-primary/60",
+						r.id === activeId && "border-primary ring-1 ring-primary/30",
+					)}
+				>
+					<button
+						type="button"
+						onClick={() => onSelect(r)}
+						className="w-full p-3 pr-11 text-left"
+					>
+						<div className="flex items-baseline justify-between gap-2">
+							<span className="truncate font-bold font-serif">{r.name}</span>
+							<span className="shrink-0 text-[11px] text-muted-foreground">
+								{formatDate(r.savedAt)}
+							</span>
+						</div>
+						<div className="mt-1 flex gap-3 text-muted-foreground text-xs tabular-nums">
+							<span>{(r.stats.dist / 1000).toFixed(2)} km</span>
+							<span>↑ {Math.round(r.stats.gain)} m</span>
+							<span>{Math.round(r.stats.walkKcal)} kcal</span>
+						</div>
+					</button>
+					{/* 削除ボタンは項目のボタンの中に入れられないので重ねて置く */}
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className="absolute top-2 right-2 text-muted-foreground hover:text-destructive"
+						aria-label={`${r.name}を削除`}
+						onClick={() => onDelete(r.id)}
+					>
+						<Trash2Icon />
+					</Button>
+				</li>
+			))}
+		</ul>
 	);
 }

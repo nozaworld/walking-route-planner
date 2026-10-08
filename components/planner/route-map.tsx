@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * Leaflet（react-leaflet）の地図．
- * 経由点，確定前の仮の線，確定したルートを描き，地図のクリックを親に伝える．
+ * 画面いっぱいに広げる Leaflet（react-leaflet）の地図．
+ * 国土地理院の淡色地図の上に，経由点・確定前の仮の線・確定したルートを描き，
+ * 地図のクリックを親に伝える．
  * Leaflet は window に依存するため，next/dynamic の ssr: false で読み込むこと．
  */
 
 import "leaflet/dist/leaflet.css";
-import { latLngBounds } from "leaflet";
+import { latLngBounds, type PointTuple } from "leaflet";
 import { useEffect } from "react";
 import {
 	CircleMarker,
@@ -16,20 +17,29 @@ import {
 	TileLayer,
 	useMap,
 	useMapEvents,
+	ZoomControl,
 } from "react-leaflet";
 import type { LatLng } from "@/lib/geo";
 
 /** 初期表示の中心（名古屋付近） */
-const INITIAL_CENTER: [number, number] = [35.18, 136.91];
-const ROUTE_COLOR = "#2766c9";
-const START_COLOR = "#3f5d4c";
+const INITIAL_CENTER: PointTuple = [35.18, 136.91];
 
-/** OSM・ORS・国土地理院の利用条件に従ったクレジット表記 */
+/*
+ * 線と点の色は globals.css の .route-* クラスで CSS 変数から指定する
+ * （暗いモードで色を変えるため．Leaflet の color 指定は CSS で上書きされる）．
+ */
+
+/** 国土地理院・ORS（OSM のデータを使う）の利用条件に従ったクレジット表記 */
 const ATTRIBUTION = [
-	'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-	'経路: <a href="https://openrouteservice.org/">openrouteservice</a>',
-	'標高: <a href="https://maps.gsi.go.jp/development/elevation_s.html">国土地理院</a>',
+	'地図・標高: <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+	'経路: <a href="https://openrouteservice.org/">openrouteservice</a> / &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 ].join(" | ");
+
+/** md（768px）以上ならパネルは左，未満なら下にある */
+const DESKTOP_QUERY = "(min-width: 768px)";
+
+/** 左に浮かせたパネルの幅と余白の合計 [px]（PC 表示） */
+const PANEL_SPACE_DESKTOP = 380 + 16 + 24;
 
 type Props = {
 	/** クリックで打った経由点 */
@@ -51,14 +61,19 @@ export default function RouteMap({
 	return (
 		<MapContainer
 			center={INITIAL_CENTER}
-			zoom={12}
-			className="absolute inset-0 z-0"
+			zoom={13}
+			zoomControl={false}
+			className="absolute inset-0 z-0 bg-background"
 		>
 			<TileLayer
-				url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+				url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
 				attribution={ATTRIBUTION}
-				maxZoom={19}
+				maxZoom={18}
+				// 暗いモードでは globals.css でタイルの色を反転させる
+				className="map-tiles"
 			/>
+			{/* 左上はパネルと重なるので，ズームボタンは右上に置く */}
+			<ZoomControl position="topright" />
 			<ClickHandler onMapClick={onMapClick} />
 			<FitToRoute route={route} fitKey={fitKey} />
 			{/* 確定前は打った点を破線で結ぶ */}
@@ -66,31 +81,37 @@ export default function RouteMap({
 				<Polyline
 					positions={waypoints}
 					pathOptions={{
-						color: ROUTE_COLOR,
-						weight: 4,
-						opacity: 0.6,
-						dashArray: "6 6",
+						className: "route-line",
+						weight: 3,
+						opacity: 0.7,
+						dashArray: "4 8",
 					}}
 				/>
 			)}
 			{route && (
-				<Polyline
-					positions={route}
-					pathOptions={{ color: ROUTE_COLOR, weight: 5 }}
-				/>
+				<>
+					{/* 白い縁取りを下に敷いて，どの地色の上でも線を読みやすくする */}
+					<Polyline
+						positions={route}
+						pathOptions={{ className: "route-casing", weight: 9, opacity: 0.9 }}
+					/>
+					<Polyline
+						positions={route}
+						pathOptions={{ className: "route-line", weight: 5 }}
+					/>
+				</>
 			)}
 			{waypoints.map((p, i) => (
 				<CircleMarker
-					// 経由点は追加か全消去しかしないので，添字で一意になる
+					// 経由点は追加か末尾の削除しかしないので，添字で一意になる
 					// biome-ignore lint/suspicious/noArrayIndexKey: 上記の理由
 					key={i}
 					center={p}
-					radius={i === 0 ? 7 : 4}
+					radius={i === 0 ? 8 : 4}
 					pathOptions={{
-						color: i === 0 ? "#27392f" : ROUTE_COLOR,
-						fillColor: i === 0 ? START_COLOR : ROUTE_COLOR,
+						className: i === 0 ? "route-start" : "route-point",
+						weight: 2,
 						fillOpacity: 1,
-						weight: i === 0 ? 2 : 1,
 					}}
 				/>
 			))}
@@ -106,7 +127,10 @@ function ClickHandler({ onMapClick }: { onMapClick: (p: LatLng) => void }) {
 	return null;
 }
 
-/** fitKey が変わったときに，ルート全体が見えるよう表示範囲を合わせる */
+/**
+ * fitKey が変わったときに，ルート全体が見えるよう表示範囲を合わせる．
+ * パネルに隠れる側（PC は左，スマホは下）には余白を多くとる．
+ */
 function FitToRoute({
 	route,
 	fitKey,
@@ -118,10 +142,11 @@ function FitToRoute({
 	// biome-ignore lint/correctness/useExhaustiveDependencies: fitKey が変わったときだけ合わせ直す（route の参照の変化では動かさない）
 	useEffect(() => {
 		if (!route || route.length < 2) return;
-		// 下端は地図に重ねた標高断面図（約150px）の分だけ余白を多くとる
+		const desktop = window.matchMedia(DESKTOP_QUERY).matches;
+		const sheetHeight = window.innerHeight * 0.5;
 		map.fitBounds(latLngBounds(route), {
-			paddingTopLeft: [30, 30],
-			paddingBottomRight: [30, 170],
+			paddingTopLeft: desktop ? [PANEL_SPACE_DESKTOP, 40] : [24, 24],
+			paddingBottomRight: desktop ? [60, 40] : [24, sheetHeight + 16],
 		});
 	}, [fitKey, map]);
 	return null;

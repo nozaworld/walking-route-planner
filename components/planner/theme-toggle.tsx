@@ -18,7 +18,8 @@ export function ThemeToggle() {
 		<Button
 			variant="ghost"
 			size="icon-sm"
-			aria-label={isDark ? "明るい表示にする" : "暗い表示にする"}
+			// テーマはサーバーでは分からないので，ラベルはモードによらず同じにする
+			aria-label="明るい表示と暗い表示を切り替える"
 			onClick={() => setTheme(isDark ? "light" : "dark")}
 		>
 			{/* 表示前（テーマ未確定）でも形が崩れないよう，CSS で出し分ける */}

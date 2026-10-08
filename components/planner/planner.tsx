@@ -2,17 +2,18 @@
 
 /**
  * ルート疲労度プランナーの画面全体．
- * 「出発地点を選ぶ → 地図をクリック → 経路を確定」の流れを状態（Phase）で管理し，
- * 地図・断面図・統計・保存済みルート・エラー・読み込み中の表示を組み立てる．
+ * 地図を画面いっぱいに広げ，操作パネルを PC では左に浮かせ，スマホでは下に置く．
+ * 「描きはじめる → 地図をクリック → 確定」の流れを状態（Phase）で管理し，
+ * 手順の案内・統計・断面図・保存済みルートをパネルの中に組み立てる．
  */
 
-import { Loader2Icon, TriangleAlertIcon } from "lucide-react";
+import { TriangleAlertIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
@@ -24,10 +25,11 @@ import {
 	saveWeight,
 } from "@/lib/storage";
 import { ElevationProfile } from "./elevation-profile";
+import { PanelHeader } from "./panel-header";
 import { SaveRouteDialog } from "./save-route-dialog";
 import { SavedRouteList } from "./saved-route-list";
 import { StatsSummary } from "./stats-summary";
-import { ThemeToggle } from "./theme-toggle";
+import { type Phase, StepGuide } from "./step-guide";
 
 // Leaflet は window に依存するので，ブラウザでのみ読み込む
 const RouteMap = dynamic(() => import("./route-map"), {
@@ -38,21 +40,8 @@ const RouteMap = dynamic(() => import("./route-map"), {
 /** 体重が未入力・不正なときに使う値 [kg] */
 const DEFAULT_WEIGHT = 60;
 
-/**
- * 画面の段階．
- * idle：何もしていない / drawing：経由点を打っている /
- * loading：API で計算中 / result：ルートを表示中
- */
-type Phase = "idle" | "drawing" | "loading" | "result";
-
-/** 段階ごとに操作バーに出す案内 */
-const HINTS: Record<Phase, string> = {
-	idle: "「出発地点を選ぶ」を押してから地図をクリックしてください．",
-	drawing:
-		"地図をクリックして経路上の点を順に打ってください．パン・ズームは自由に行えます．",
-	loading: "",
-	result: "",
-};
+/** パネルのタブ */
+type Tab = "plan" | "saved";
 
 /** 画面全体のコンポーネント */
 export function Planner() {
@@ -67,6 +56,7 @@ export function Planner() {
 	const [weightInput, setWeightInput] = useState(String(DEFAULT_WEIGHT));
 	const [routes, setRoutes] = useState<SavedRoute[]>([]);
 	const [saveOpen, setSaveOpen] = useState(false);
+	const [tab, setTab] = useState<Tab>("plan");
 
 	// localStorage はサーバーでは読めないので，表示後に読み込む
 	useEffect(() => {
@@ -100,6 +90,7 @@ export function Planner() {
 	/** 描き直しを始める */
 	function startDrawing() {
 		reset();
+		setTab("plan");
 		setPhase("drawing");
 	}
 
@@ -107,6 +98,11 @@ export function Planner() {
 	function handleMapClick(p: LatLng) {
 		if (phase !== "drawing") return;
 		setWaypoints((prev) => [...prev, p]);
+	}
+
+	/** 最後に打った点を取り消す */
+	function undoWaypoint() {
+		setWaypoints((prev) => prev.slice(0, -1));
 	}
 
 	/** 入力欄から離れたら，実際に使う値に揃えて保存する */
@@ -150,6 +146,7 @@ export function Planner() {
 		setFitKey(route.id);
 		setError(null);
 		setPhase("result");
+		setTab("plan");
 	}
 
 	/** 一覧を画面と localStorage の両方で更新する */
@@ -182,101 +179,111 @@ export function Planner() {
 	}
 
 	return (
-		<div className="flex h-dvh flex-col">
-			<header className="flex flex-wrap items-center gap-4 border-b px-5 py-3">
-				<h1 className="font-bold text-lg tracking-wide">
-					ルート疲労度プランナー
-				</h1>
-				<label
-					htmlFor="weight"
-					className="ml-auto flex items-center gap-2 text-sm"
-				>
-					体重
-					<Input
-						id="weight"
-						type="number"
-						inputMode="decimal"
-						min={20}
-						max={200}
-						step={0.1}
-						value={weightInput}
-						onChange={(e) => setWeightInput(e.target.value)}
-						onBlur={handleWeightBlur}
-						className="w-20"
-					/>
-					kg
-				</label>
-				<ThemeToggle />
-			</header>
+		<main className="relative h-dvh overflow-hidden">
+			<RouteMap
+				waypoints={waypoints}
+				route={plan?.coords ?? null}
+				fitKey={fitKey}
+				onMapClick={handleMapClick}
+			/>
 
-			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
-				<div className="relative min-h-[50vh] flex-1">
-					<RouteMap
-						waypoints={waypoints}
-						route={plan?.coords ?? null}
-						fitKey={fitKey}
-						onMapClick={handleMapClick}
-					/>
-					{error && (
-						<Alert
-							variant="destructive"
-							className="absolute top-2.5 right-2.5 left-2.5 z-[1000] w-auto"
-						>
-							<TriangleAlertIcon />
-							<AlertDescription>{error}</AlertDescription>
-						</Alert>
-					)}
-					{phase === "loading" && (
-						<div className="absolute inset-0 z-[1000] flex items-center justify-center gap-2 bg-background/80 text-sm">
-							<Loader2Icon className="size-4 animate-spin" />
-							計算中です．しばらくお待ちください．
-						</div>
-					)}
-					{plan && (
-						<ElevationProfile
-							points={plan.profile.points}
-							elevs={plan.profile.elevs}
-						/>
-					)}
+			{/* 描いている間は，地図の上に操作のヒントを出す */}
+			{phase === "drawing" && (
+				<div className="pointer-events-none absolute top-4 left-1/2 z-[500] -translate-x-1/2 whitespace-nowrap rounded-full border bg-card/90 px-4 py-1.5 text-xs shadow-sm backdrop-blur md:left-[calc(50%+210px)]">
+					地図をクリックして道をたどる
 				</div>
-				<SavedRouteList
-					routes={routes}
-					activeId={viewingId}
-					onSelect={showSavedRoute}
-					onDelete={handleDelete}
-				/>
-			</div>
+			)}
 
-			<div className="flex flex-wrap items-center gap-2.5 border-t px-5 py-2.5">
-				<Button
-					onClick={startDrawing}
-					disabled={phase === "drawing" || phase === "loading"}
+			<aside className="absolute inset-x-0 bottom-0 z-[600] flex max-h-[50dvh] flex-col overflow-hidden rounded-t-2xl border bg-card/95 shadow-xl backdrop-blur md:inset-y-4 md:right-auto md:left-4 md:max-h-none md:w-[380px] md:rounded-2xl">
+				<PanelHeader />
+
+				<Tabs
+					value={tab}
+					onValueChange={(v) => setTab(v as Tab)}
+					className="min-h-0 flex-1 gap-0"
 				>
-					出発地点を選ぶ
-				</Button>
-				<Button
-					onClick={finishDrawing}
-					disabled={phase !== "drawing" || waypoints.length < 2}
-				>
-					経路を確定する
-				</Button>
-				<Button
-					variant="outline"
-					onClick={reset}
-					disabled={phase === "loading" || (phase === "idle" && !plan)}
-				>
-					やり直す
-				</Button>
-				<Button
-					variant="outline"
-					onClick={() => setSaveOpen(true)}
-					disabled={phase !== "result" || viewingId !== null}
-				>
-					このルートを保存する
-				</Button>
-				<span className="text-muted-foreground text-xs">{HINTS[phase]}</span>
-				{stats && <StatsSummary stats={stats} className="ml-auto" />}
-			</div>
+					<div className="shrink-0 px-5 pt-3">
+						<TabsList className="w-full">
+							<TabsTrigger value="plan">ルートを作る</TabsTrigger>
+							<TabsTrigger value="saved">
+								保存済み
+								<span className="text-muted-foreground text-xs tabular-nums">
+									{routes.length}
+								</span>
+							</TabsTrigger>
+						</TabsList>
+					</div>
+
+					<TabsContent
+						value="plan"
+						className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pt-4 pb-5"
+					>
+						<div className="flex items-center justify-between gap-3">
+							<label htmlFor="weight" className="text-muted-foreground text-sm">
+								体重
+							</label>
+							<div className="flex items-center gap-1.5 text-sm">
+								<Input
+									id="weight"
+									type="number"
+									inputMode="decimal"
+									min={20}
+									max={200}
+									step={0.1}
+									value={weightInput}
+									onChange={(e) => setWeightInput(e.target.value)}
+									onBlur={handleWeightBlur}
+									className="w-20 text-right tabular-nums"
+								/>
+								kg
+							</div>
+						</div>
+
+						{error && (
+							<Alert variant="destructive">
+								<TriangleAlertIcon />
+								<AlertDescription>{error}</AlertDescription>
+							</Alert>
+						)}
+
+						<StepGuide
+							phase={phase}
+							waypointCount={waypoints.length}
+							saved={viewingId !== null}
+							onStart={startDrawing}
+							onUndo={undoWaypoint}
+							onFinish={finishDrawing}
+							onCancel={reset}
+							onSave={() => setSaveOpen(true)}
+						/>
+
+						{stats && <StatsSummary stats={stats} />}
+						{plan && (
+							<ElevationProfile
+								points={plan.profile.points}
+								elevs={plan.profile.elevs}
+							/>
+						)}
+					</TabsContent>
+
+					<TabsContent
+						value="saved"
+						className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5"
+					>
+						<SavedRouteList
+							routes={routes}
+							activeId={viewingId}
+							onSelect={showSavedRoute}
+							onDelete={handleDelete}
+						/>
+					</TabsContent>
+				</Tabs>
+			</aside>
+
+			{/* 計算中は地図を薄く覆って，クリックを受け付けない */}
+			{phase === "loading" && (
+				<div className="absolute inset-0 z-[500] bg-background/40 backdrop-blur-[1px]" />
+			)}
 
 			<SaveRouteDialog
 				open={saveOpen}
@@ -284,6 +291,6 @@ export function Planner() {
 				defaultName={`ルート ${routes.length + 1}`}
 				onSave={handleSave}
 			/>
-		</div>
+		</main>
 	);
 }

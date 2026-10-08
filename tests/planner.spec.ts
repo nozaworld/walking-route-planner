@@ -19,7 +19,7 @@ const FAKE_PLAN: PlanResponse = (() => {
 
 /** 地図タイルの取得を止め，/api/plan の応答を差し替える */
 async function stubNetwork(page: Page, body: unknown, status = 200) {
-	await page.route("https://tile.openstreetmap.org/**", (route) =>
+	await page.route("https://cyberjapandata.gsi.go.jp/xyz/**", (route) =>
 		route.abort(),
 	);
 	await page.route("**/api/plan", (route) =>
@@ -27,12 +27,15 @@ async function stubNetwork(page: Page, body: unknown, status = 200) {
 	);
 }
 
-/** 「出発地点を選ぶ」から地図を2回クリックして，経路を確定する */
+/**
+ * 「ルートを描きはじめる」から地図を2回クリックして，経路を確定する．
+ * 画面の左側は操作パネルが覆っているので，右寄りをクリックする．
+ */
 async function drawAndConfirm(page: Page) {
-	await page.getByRole("button", { name: "出発地点を選ぶ" }).click();
+	await page.getByRole("button", { name: "ルートを描きはじめる" }).click();
 	const map = page.locator(".leaflet-container");
-	await map.click({ position: { x: 200, y: 200 } });
-	await map.click({ position: { x: 300, y: 150 } });
+	await map.click({ position: { x: 700, y: 300 } });
+	await map.click({ position: { x: 800, y: 250 } });
 	await page.getByRole("button", { name: "経路を確定する" }).click();
 }
 
@@ -90,12 +93,11 @@ test("保存したルートは再読み込み後も一覧に残り，削除で�
 	await page.getByRole("button", { name: "このルートを保存する" }).click();
 	await page.getByLabel("ルート名").fill("朝の散歩");
 	await page.getByRole("button", { name: "保存する" }).click();
-	await expect(
-		page.getByRole("button", { name: "このルートを保存する" }),
-	).toBeDisabled();
+	await expect(page.getByRole("button", { name: "保存済み" })).toBeDisabled();
 
 	await page.reload();
-	const item = page.getByRole("button", { name: /^朝の散歩 / });
+	await page.getByRole("tab", { name: /保存済み/ }).click();
+	const item = page.getByRole("button", { name: /^朝の散歩/ }).first();
 	await expect(item).toBeVisible();
 
 	await page.getByRole("button", { name: "朝の散歩を削除" }).click();
