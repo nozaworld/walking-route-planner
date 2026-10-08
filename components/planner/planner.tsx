@@ -3,20 +3,29 @@
 /**
  * ルート疲労度プランナーの画面全体．
  * 「出発地点を選ぶ → 地図をクリック → 経路を確定」の流れを状態（Phase）で管理し，
- * 地図・断面図・統計・エラー・読み込み中の表示を組み立てる．
+ * 地図・断面図・統計・保存済みルート・エラー・読み込み中の表示を組み立てる．
  */
 
 import { Loader2Icon, TriangleAlertIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
-import { loadWeight, saveWeight } from "@/lib/storage";
+import {
+	loadRoutes,
+	loadWeight,
+	type SavedRoute,
+	saveRoutes,
+	saveWeight,
+} from "@/lib/storage";
 import { ElevationProfile } from "./elevation-profile";
+import { SaveRouteDialog } from "./save-route-dialog";
+import { SavedRouteList } from "./saved-route-list";
 import { StatsSummary } from "./stats-summary";
 
 // Leaflet は window に依存するので，ブラウザでのみ読み込む
@@ -49,15 +58,20 @@ export function Planner() {
 	const [phase, setPhase] = useState<Phase>("idle");
 	const [waypoints, setWaypoints] = useState<LatLng[]>([]);
 	const [plan, setPlan] = useState<PlanResponse | null>(null);
+	// 表示中のルートが保存済みなら，その id（保存ボタンを押せなくするのに使う）
+	const [viewingId, setViewingId] = useState<string | null>(null);
 	const [fitKey, setFitKey] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	// 入力途中（空欄など）も表示できるよう，体重は文字列のまま持つ
 	const [weightInput, setWeightInput] = useState(String(DEFAULT_WEIGHT));
+	const [routes, setRoutes] = useState<SavedRoute[]>([]);
+	const [saveOpen, setSaveOpen] = useState(false);
 
 	// localStorage はサーバーでは読めないので，表示後に読み込む
 	useEffect(() => {
 		const saved = loadWeight();
 		if (saved !== null) setWeightInput(String(saved));
+		setRoutes(loadRoutes());
 	}, []);
 
 	/** 計算に使う体重 [kg]．不正な入力なら既定値 */
@@ -78,6 +92,7 @@ export function Planner() {
 		setPhase("idle");
 		setWaypoints([]);
 		setPlan(null);
+		setViewingId(null);
 		setError(null);
 	}
 
@@ -124,6 +139,45 @@ export function Planner() {
 			);
 			setPhase("drawing");
 		}
+	}
+
+	/** 保存済みルートを地図に表示する（統計は今の体重で計算し直す） */
+	function showSavedRoute(route: SavedRoute) {
+		setWaypoints([]);
+		setPlan({ coords: route.coords, profile: route.profile });
+		setViewingId(route.id);
+		setFitKey(route.id);
+		setError(null);
+		setPhase("result");
+	}
+
+	/** 一覧を画面と localStorage の両方で更新する */
+	function updateRoutes(next: SavedRoute[]) {
+		setRoutes(next);
+		saveRoutes(next);
+	}
+
+	/** 表示中のルートを，入力された名前で一覧の先頭に保存する */
+	function handleSave(name: string) {
+		if (!plan || !stats) return;
+		const route: SavedRoute = {
+			id: crypto.randomUUID(),
+			name,
+			stats,
+			coords: plan.coords,
+			profile: plan.profile,
+			savedAt: Date.now(),
+		};
+		updateRoutes([route, ...routes]);
+		setViewingId(route.id);
+		setSaveOpen(false);
+		toast.success(`「${name}」を保存しました`);
+	}
+
+	/** 保存済みルートを削除する．表示中なら保存前の扱いに戻す */
+	function handleDelete(id: string) {
+		updateRoutes(routes.filter((r) => r.id !== id));
+		if (viewingId === id) setViewingId(null);
 	}
 
 	return (
@@ -179,6 +233,12 @@ export function Planner() {
 						/>
 					)}
 				</div>
+				<SavedRouteList
+					routes={routes}
+					activeId={viewingId}
+					onSelect={showSavedRoute}
+					onDelete={handleDelete}
+				/>
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2.5 border-t px-5 py-2.5">
@@ -201,9 +261,23 @@ export function Planner() {
 				>
 					やり直す
 				</Button>
+				<Button
+					variant="outline"
+					onClick={() => setSaveOpen(true)}
+					disabled={phase !== "result" || viewingId !== null}
+				>
+					このルートを保存する
+				</Button>
 				<span className="text-muted-foreground text-xs">{HINTS[phase]}</span>
 				{stats && <StatsSummary stats={stats} className="ml-auto" />}
 			</div>
+
+			<SaveRouteDialog
+				open={saveOpen}
+				onOpenChange={setSaveOpen}
+				defaultName={`ルート ${routes.length + 1}`}
+				onSave={handleSave}
+			/>
 		</div>
 	);
 }
