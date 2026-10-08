@@ -4,16 +4,24 @@
 
 地図上をクリックして描いた徒歩ルートについて，**距離・獲得標高・所要時間・消費カロリー**を，坂の勾配を考慮して見積もる Web アプリです．
 
+**デモ**：https://walking-route-planner-inky.vercel.app/
+
 ![画面のスクリーンショット](docs/screenshot.png)
+
+| 暗い表示 | スマホ |
+|---|---|
+| ![暗い表示のスクリーンショット](docs/screenshot-dark.png) | ![スマホのスクリーンショット](docs/screenshot-mobile.png) |
 
 ## 主な機能
 
-- **ルートを描く**：地図をクリックして経由点を打つと，道路に沿った徒歩ルートに変換します（OpenRouteService）．
-- **標高断面図**：国土地理院の標高データから，ルートの起伏を断面図で表示します．
-- **疲労度の見積もり**：勾配ごとの歩行エネルギーと歩行速度から，消費カロリーと所要時間を計算します．自転車で走った場合の概算も出します．
+- **ルートを描く**：地図をクリックして経由点を打つと，道路に沿った徒歩ルートに変換します（OpenRouteService）．打ち間違えた点は「ひとつ戻す」で取り消せます．
+- **手順の案内**：「一 出発地点 → 二 道をたどる → 三 確定」のどこにいるかを示し，その段階で押すボタンだけを出します．
+- **標高断面図**：国土地理院の標高データから，ルートの起伏を断面図で表示します．カーソルを合わせた地点の距離と標高がわかります．
+- **疲労度の見積もり**：勾配ごとの歩行エネルギーと歩行速度から，消費カロリーと所要時間を計算します．徒歩と自転車を切り替えて表示できます．
 - **体重を反映**：体重を変えると，通信せずにその場で計算し直します．
 - **ルートの保存**：名前を付けてブラウザに保存し，一覧からいつでも表示・削除できます．
-- **スマホ対応**：狭い画面では地図・一覧・操作バーを縦に並べます．
+- **和風モダンのデザイン**：生成り・墨・藍・朱の配色，明朝体の数字，青海波の文様．暗い表示にも対応します．
+- **スマホ対応**：PC では操作パネルを地図の左に，スマホでは下に重ねます．
 
 ## 計算モデル
 
@@ -32,8 +40,9 @@
 | 分類 | 使っているもの |
 |---|---|
 | フレームワーク | Next.js 16（App Router），React 19，TypeScript |
-| UI | Tailwind CSS v4，shadcn/ui（Base UI），lucide-react，sonner |
-| 地図 | Leaflet，react-leaflet，OpenStreetMap |
+| UI | Tailwind CSS v4，shadcn/ui（Base UI），lucide-react，sonner，next-themes |
+| フォント | Zen Kaku Gothic New（本文），しっぽり明朝（見出し・数字） |
+| 地図 | Leaflet，react-leaflet，国土地理院 淡色地図 |
 | 外部 API | OpenRouteService（徒歩ルート），国土地理院 標高 API |
 | 入力検証 | zod |
 | テスト | Vitest（ユニット），Playwright（E2E） |
@@ -59,7 +68,7 @@ API キーはサーバー側の Route Handler でのみ使い，ブラウザに�
 app/
   page.tsx                  トップページ
   api/plan/route.ts         経路と標高を返す API
-components/planner/         画面の部品（地図，断面図，統計，保存一覧，保存ダイアログ）
+components/planner/         画面の部品（地図，操作パネル，手順の案内，統計，断面図，保存一覧，保存ダイアログ）
 lib/
   geo.ts                    距離計算と点列の間引き
   energy-model.ts           エネルギー・速度モデルと統計の計算
@@ -124,13 +133,14 @@ E2E テストでは経路計算 API の応答を差し替えるので，CI に A
 
 - ログインと DB へのルート保存，URL での共有
 - 「最短」と「いちばん楽」なルートの比較
-- 勾配でルートを色分けし，断面図と地図の位置を連動
+- 勾配でルートを色分けし，断面図と地図上の位置を連動
 - 目標の消費カロリーや時間から周回ルートを作る逆算モード
 - 自転車用ルートでの計算
 
 ## クレジット
 
-- 地図：© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
-- 経路探索：[openrouteservice](https://openrouteservice.org/)（HeiGIT）
+- 地図：[国土地理院 地理院タイル（淡色地図）](https://maps.gsi.go.jp/development/ichiran.html)
+- 経路探索：[openrouteservice](https://openrouteservice.org/)（HeiGIT），経路データ © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
 - 標高：[国土地理院 標高 API](https://maps.gsi.go.jp/development/elevation_s.html)
+- 青海波の文様：Lea Verou「CSS3 Patterns Gallery」の Seigaiha を元に作成
 - 歩行エネルギーモデル：Minetti, A. E. et al. (2002). Energy cost of walking and running at extreme uphill and downhill slopes. *Journal of Applied Physiology*, 93(3), 1039–1046.
