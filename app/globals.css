@@ -232,63 +232,34 @@
 }
 
 /*
- * Leaflet の地図まわりを和風の配色とフォントに合わせる．
- * タイルの読み込みが間に合わない部分は，白ではなく背景色（生成り・墨）を見せる．
- * leaflet.css の指定（#ddd）より後から読まれても勝つよう，セレクタを重ねている．
+ * ルートの色．地図（route-map.tsx の PALETTE）と標高断面図で同じ色を使う．
+ * 地図は CSS 変数を読めないので，値を変えるときは両方を揃えること．
  */
-.leaflet-container.leaflet-container {
-	font-family: inherit;
-	background-color: var(--background);
-}
-
-/* ルートの線と点の色（route-map.tsx の className と対応） */
 :root {
 	--route: #1f3a5f;
-	--route-casing: #ffffff;
 }
 .dark {
 	--route: #9dbcf0;
-	--route-casing: #0d0f11;
-}
-.route-line {
-	stroke: var(--route);
-}
-.route-casing {
-	stroke: var(--route-casing);
-}
-.route-start {
-	stroke: var(--route-casing);
-	fill: var(--shu);
-}
-.route-point {
-	stroke: var(--route-casing);
-	fill: var(--route);
-}
-.place-marker {
-	stroke: var(--shu);
-	fill: var(--route-casing);
 }
 
-/* 暗いモードでは淡色地図を反転し，彩度を落として墨色の地になじませる */
-.dark .map-tiles {
-	filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85)
-		saturate(0.5);
+/* MapLibre の地図まわりを和風の配色とフォントに合わせる */
+.maplibregl-map {
+	font-family: inherit;
 }
-
-/* 検索した場所の名前の吹き出し */
-.leaflet-tooltip {
-	border-color: var(--border);
-	background-color: var(--card);
-	color: var(--foreground);
-	font-weight: 700;
-	box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
-}
-.leaflet-tooltip-top::before {
-	border-top-color: var(--card);
-}
-
-.dark .leaflet-control-attribution,
-.dark .leaflet-bar a {
-	background-color: var(--card);
+.maplibregl-ctrl-attrib.maplibregl-ctrl-attrib {
+	background-color: color-mix(in oklab, var(--card) 85%, transparent);
 	color: var(--muted-foreground);
+}
+.maplibregl-ctrl-attrib a {
+	color: inherit;
+}
+.dark .maplibregl-ctrl-group {
+	background-color: var(--card);
+}
+.dark .maplibregl-ctrl-group button + button {
+	border-top-color: var(--border);
+}
+/* 暗いモードではズームボタンのアイコン（黒い SVG）を反転して見えるようにする */
+.dark .maplibregl-ctrl-icon {
+	filter: invert(1);
 }

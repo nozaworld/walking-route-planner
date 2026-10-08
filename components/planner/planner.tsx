@@ -37,7 +37,7 @@ import { SavedRouteList } from "./saved-route-list";
 import { StatsSummary } from "./stats-summary";
 import { type Phase, StepGuide } from "./step-guide";
 
-// Leaflet は window に依存するので，ブラウザでのみ読み込む
+// 地図（MapLibre）は window と WebGL に依存するので，ブラウザでのみ読み込む
 const RouteMap = dynamic(() => import("./route-map"), {
 	ssr: false,
 	loading: () => <div className="absolute inset-0 bg-muted" />,
@@ -220,6 +220,7 @@ export function Planner() {
 				fitKey={fitKey}
 				panelSize={panelSize}
 				place={place}
+				drawing={phase === "drawing"}
 				onMapClick={handleMapClick}
 				onCenterChange={(c) => {
 					mapCenter.current = c;

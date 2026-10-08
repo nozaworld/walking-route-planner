@@ -33,7 +33,7 @@ async function stubNetwork(page: Page, body: unknown, status = 200) {
  */
 async function drawAndConfirm(page: Page) {
 	await page.getByRole("button", { name: "ルートを描きはじめる" }).click();
-	const map = page.locator(".leaflet-container");
+	const map = page.locator(".maplibregl-canvas");
 	await map.click({ position: { x: 700, y: 300 } });
 	await map.click({ position: { x: 800, y: 250 } });
 	await page.getByRole("button", { name: "経路を確定する" }).click();
@@ -41,7 +41,7 @@ async function drawAndConfirm(page: Page) {
 
 test.beforeEach(async ({ page }) => {
 	await page.goto("/");
-	await expect(page.locator(".leaflet-container")).toBeVisible();
+	await expect(page.locator(".maplibregl-canvas")).toBeVisible();
 });
 
 test("経路を確定すると統計と断面図が出る", async ({ page }) => {
@@ -166,5 +166,5 @@ test("地名を検索して選ぶと，その場所に目印が立つ", async ({
 
 	await results.getByRole("button", { name: /名古屋城/ }).click();
 	await expect(results).toBeHidden();
-	await expect(page.locator(".leaflet-tooltip")).toHaveText("名古屋城");
+	await expect(page.getByTestId("place-marker")).toHaveText("名古屋城");
 });
