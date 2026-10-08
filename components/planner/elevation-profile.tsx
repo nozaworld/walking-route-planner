@@ -32,7 +32,9 @@ export function ElevationProfile({ points, elevs }: Props) {
 	const maxE = Math.max(...elevs);
 	// 平坦なルートでも 0 で割らないよう，縦の幅は最低 1m とする
 	const span = Math.max(maxE - minE, 1);
+	// 累積距離 [m] → SVG の横座標
 	const x = (d: number) => (total > 0 ? (d / total) * W : 0);
+	// 標高 [m] → SVG の縦座標（上が高い）
 	const y = (e: number) =>
 		PAD_T + (H - PAD_T - PAD_B) * (1 - (e - minE) / span);
 

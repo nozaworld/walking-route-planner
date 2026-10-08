@@ -15,6 +15,7 @@ const EARTH_RADIUS_M = 6371000;
  * 徒歩ルート程度の距離なら誤差は無視できる．
  */
 export function haversine(a: LatLng, b: LatLng): number {
+	// 度 → ラジアン
 	const toRad = (d: number) => (d * Math.PI) / 180;
 	const dLat = toRad(b.lat - a.lat);
 	const dLng = toRad(b.lng - a.lng);
