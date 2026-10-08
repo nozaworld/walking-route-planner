@@ -27,6 +27,11 @@ export const LIMITS = {
 		{ scope: "ip", window: "day", max: 200 },
 		{ scope: "global", window: "day", max: 450 },
 	],
+	// いいね・コメント・通報・複製（連投や荒らしを防ぐ．外部 API は使わない）
+	write: [
+		{ scope: "ip", window: "minute", max: 30 },
+		{ scope: "ip", window: "day", max: 500 },
+	],
 } as const satisfies Record<string, readonly Limit[]>;
 
 export type LimitedApi = keyof typeof LIMITS;

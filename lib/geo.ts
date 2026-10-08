@@ -51,3 +51,25 @@ export function cumulativeDistances(points: LatLng[]): number[] {
 	}
 	return cum;
 }
+
+/** 点列を囲む範囲 */
+export type Bounds = {
+	minLat: number;
+	minLng: number;
+	maxLat: number;
+	maxLng: number;
+};
+
+/** 点列を囲む範囲を求める（点が1つもなければすべて 0） */
+export function boundsOf(points: LatLng[]): Bounds {
+	if (points.length === 0)
+		return { minLat: 0, minLng: 0, maxLat: 0, maxLng: 0 };
+	const lats = points.map((p) => p.lat);
+	const lngs = points.map((p) => p.lng);
+	return {
+		minLat: Math.min(...lats),
+		minLng: Math.min(...lngs),
+		maxLat: Math.max(...lats),
+		maxLng: Math.max(...lngs),
+	};
+}

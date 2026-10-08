@@ -6,6 +6,7 @@
 
 import { and, count, desc, eq } from "drizzle-orm";
 import { routes, user } from "@/db/schema";
+import { boundsOf } from "@/lib/geo";
 import {
 	type CloudRoute,
 	MAX_ROUTES_PER_USER,
@@ -26,6 +27,15 @@ function toCloudRoute(row: typeof routes.$inferSelect): CloudRoute {
 		profile: row.profile,
 		shared: row.shared,
 		savedAt: row.createdAt.getTime(),
+	};
+}
+
+/** 保存する内容から，検索用の列（範囲・距離・獲得標高）を作る */
+function searchColumns(input: RouteInput) {
+	return {
+		...boundsOf(input.coords),
+		distM: input.stats.dist,
+		gainM: input.stats.gain,
 	};
 }
 
@@ -60,7 +70,7 @@ export async function createRoute(
 	await assertWithinLimit(userId, 1);
 	const [row] = await db
 		.insert(routes)
-		.values({ ...input, userId })
+		.values({ ...input, ...searchColumns(input), userId })
 		.returning();
 	return toCloudRoute(row);
 }
@@ -80,6 +90,7 @@ export async function importRoutes(
 		.values(
 			inputs.map((input, i) => ({
 				...input,
+				...searchColumns(input),
 				userId,
 				// 1件ずつ1ミリ秒ずらして，取り込んだ後も元の並び順になるようにする
 				createdAt: new Date(base + (inputs.length - i)),
@@ -122,7 +133,16 @@ export async function deleteRoute(
 export async function getRouteForView(
 	id: string,
 	viewerId: string | null,
-): Promise<(CloudRoute & { authorName: string; isOwner: boolean }) | null> {
+): Promise<
+	| (CloudRoute & {
+			authorId: string;
+			authorName: string;
+			isOwner: boolean;
+			likeCount: number;
+			commentCount: number;
+	  })
+	| null
+> {
 	const [row] = await db
 		.select({ route: routes, authorName: user.name })
 		.from(routes)
@@ -130,6 +150,14 @@ export async function getRouteForView(
 		.where(eq(routes.id, id));
 	if (!row) return null;
 	const isOwner = viewerId === row.route.userId;
-	if (!row.route.shared && !isOwner) return null;
-	return { ...toCloudRoute(row.route), authorName: row.authorName, isOwner };
+	// 非公開か，通報で非表示になったルートは，持ち主にだけ見せる
+	if ((!row.route.shared || row.route.hidden) && !isOwner) return null;
+	return {
+		...toCloudRoute(row.route),
+		authorId: row.route.userId,
+		authorName: row.authorName,
+		isOwner,
+		likeCount: row.route.likeCount,
+		commentCount: row.route.commentCount,
+	};
 }
