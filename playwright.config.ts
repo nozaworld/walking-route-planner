@@ -48,7 +48,12 @@ export default defineConfig({
 
 		{
 			name: "firefox",
-			use: { ...devices["Desktop Firefox"] },
+			use: {
+				...devices["Desktop Firefox"],
+				// CI の Linux には GPU がなく，Firefox はソフトウェア描画の WebGL を自動で無効にする．
+				// 地図（MapLibre）は WebGL が必須なので，強制的に有効にする
+				launchOptions: { firefoxUserPrefs: { "webgl.force-enabled": true } },
+			},
 		},
 
 		{
