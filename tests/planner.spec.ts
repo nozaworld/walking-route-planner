@@ -271,3 +271,60 @@ test("目標から周回ルートを作ると，目標と実際の値を並べ�
 	// 架空のルートは約1.4km で目標から15%以内なので，作り直さない
 	expect(calls).toBe(1);
 });
+
+test("みんなのルートで，地図の範囲の公開ルートを一覧し，選べる", async ({
+	page,
+}) => {
+	await page.route("https://cyberjapandata.gsi.go.jp/xyz/**", (route) =>
+		route.abort(),
+	);
+	const summary = (id: string, name: string) => ({
+		id,
+		name,
+		authorId: "u1",
+		authorName: "野沢",
+		stats: {
+			dist: 2400,
+			gain: 70,
+			loss: 70,
+			walkKcal: 90,
+			walkMin: 30,
+			bikeKcal: 40,
+			bikeMin: 9,
+		},
+		coords: FAKE_PLAN.coords,
+		likeCount: 3,
+		commentCount: 1,
+		savedAt: Date.now(),
+	});
+	let lastQuery = "";
+	await page.route("**/api/explore?**", (route) => {
+		lastQuery = new URL(route.request().url()).search;
+		return route.fulfill({
+			json: {
+				routes: [
+					summary("11111111-1111-4111-8111-111111111111", "城まで散歩"),
+					summary("22222222-2222-4222-8222-222222222222", "坂道めぐり"),
+				],
+			},
+		});
+	});
+
+	await page.goto("/explore");
+	await expect(page.getByText("2 件")).toBeVisible();
+	await expect(page.getByText("坂道めぐり")).toBeVisible();
+	// 2.4km で 70m 上る（約29m/km）ので「坂が多い」
+	await expect(page.getByText("坂が多い").first()).toBeVisible();
+
+	// 条件を変えると，その条件で検索し直す
+	await page
+		.getByRole("radio", { name: "いいね順" })
+		.or(page.getByRole("button", { name: "いいね順" }))
+		.click();
+	await expect.poll(() => lastQuery).toContain("sort=likes");
+
+	await page.getByRole("button", { name: /坂道めぐり/ }).click();
+	await expect(
+		page.getByRole("link", { name: "くわしく見る →" }).nth(1),
+	).toHaveAttribute("href", "/r/22222222-2222-4222-8222-222222222222");
+});

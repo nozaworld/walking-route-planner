@@ -1,0 +1,32 @@
+meta {
+  name: 自分用に保存
+  type: http
+  seq: 17
+}
+
+docs {
+  公開ルートを自分の保存済みに複製する（新しい ID で非公開）．
+}
+
+post {
+  url: {{baseUrl}}/api/routes/{{routeId}}/copy
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("201 を返す", function () {
+    expect(res.status).to.equal(201);
+  });
+  
+  test("新しい ID の非公開ルートになる", function () {
+    expect(res.body.route.id).to.not.equal(bru.getVar("routeId"));
+    expect(res.body.route.shared).to.equal(false);
+  });
+}

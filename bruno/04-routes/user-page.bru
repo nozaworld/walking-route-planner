@@ -1,0 +1,31 @@
+meta {
+  name: 利用者のページ
+  type: http
+  seq: 18
+}
+
+docs {
+  利用者のページに，公開ルートの名前が出る．
+}
+
+get {
+  url: {{baseUrl}}/u/{{userId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("公開ルートが載っている", function () {
+    expect(res.body).to.contain("Bruno の散歩");
+  });
+}

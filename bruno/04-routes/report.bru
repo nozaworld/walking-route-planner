@@ -1,0 +1,31 @@
+meta {
+  name: 通報する
+  type: http
+  seq: 18
+}
+
+docs {
+  通報を受け付ける（1件だけなので非表示にはならない）．
+}
+
+post {
+  url: {{baseUrl}}/api/reports
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+body:json {
+  { "targetType": "route", "targetId": "{{routeId}}" }
+}
+
+tests {
+  test("204 を返す", function () {
+    expect(res.status).to.equal(204);
+  });
+}

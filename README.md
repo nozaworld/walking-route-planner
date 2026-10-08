@@ -9,7 +9,7 @@
 	<img src="https://img.shields.io/badge/-Tailwind_CSS-06B6D4.svg?logo=tailwindcss&style=for-the-badge&logoColor=white">
 	<img src="https://img.shields.io/badge/-MapLibre_GL_JS-396CB2.svg?logo=maplibre&style=for-the-badge&logoColor=white">
 	<img src="https://img.shields.io/badge/-shadcn-000000.svg?logo=shadcnui&style=for-the-badge&logoColor=white">
-	<img src="https://img.shields.io/badge/-Playwright-DCDCDC.svg?style=for-the-badge&logo=data:image/svg%2Bxml;base64,PHN2ZyB2aWV3Qm94PSI2LjAzIDIyLjkgMTEzLjA3IDg1LjMzIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik00My43IDcwLjljLTQuMSAxLjItNi44IDMuMi04LjYgNS4zIDEuNy0xLjUgNC0yLjkgNy4xLTMuNyAzLjItLjkgNS44LS45IDguMS0uNXYtMS43Yy0xLjktLjItNC4xIDAtNi41LjdaTTM0LjkgNTYuM2wtMTUuMyA0cy4zLjQuOC45bDEzLTMuNHMtLjIgMi40LTEuOCA0LjVjMy0yLjMgMy4zLTYgMy4zLTZabTEyLjggMzZDMjYuMSA5OC4xIDE0LjcgNzMuMSAxMS4zIDYwLjEgOS43IDU0LjIgOSA0OS42IDguOCA0Ni43YTUgNSAwIDAgMSAwLS44Yy0xLjEuMS0xLjcuNi0xLjUgMi4zIC4yIDIuOSAuOSA3LjUgMi41IDEzLjQgMy41IDEzIDE0LjkgMzcuOSAzNi40IDMyLjEgNC43LTEuMyA4LjItMy42IDEwLjktNi41IC0yLjQgMi4yLTUuNSAzLjktOS4zIDV0bTQtNTEuM3YxLjVoOC41Yy0uMi0uNS0uMy0xLS41LTEuNWgtNy45IiBmaWxsPSIjMkQ0NTUyIi8+PHBhdGggZD0iTTYyLjEgNTMuNmMzLjggMS4xIDUuOCAzLjcgNi45IDYuMWw0LjIgMS4ycy0uNi04LjMtOC0xMC40Yy03LTItMTEuMyAzLjktMTEuOCA0LjYgMi0xLjQgNS0yLjYgOC43LTEuNlptMzMuNyA2LjFjLTctMi0xMS4zIDMuOS0xMS44IDQuNiAyLTEuNCA1LTIuNiA4LjctMS42IDMuOCAxLjEgNS44IDMuNyA2LjkgNi4xbDQuMiAxLjJzLS42LTguMy04LTEwLjRabS00LjIgMjEuOCAtMzUuMy05LjlzLjQgMS45IDEuOCA0LjRsMjkuNyA4LjNjMi40LTEuNCAzLjctMi45IDMuNy0yLjlabS0yNC40IDIxLjJjLTI3LjktNy41LTI0LjUtNDMuMS0yMC01OS45IDEuOS02LjkgMy44LTEyLjEgNS40LTE1LjYgLS45LS4yLTEuNy4zLTIuNSAxLjkgLTEuNyAzLjQtMy44IDktNS45IDE2LjggLTQuNSAxNi45LTcuOSA1Mi40IDIwIDU5LjkgMTMuMiAzLjUgMjMuNC0xLjggMzEuMS0xMC4yIC03LjMgNi42LTE2LjUgMTAuMy0yOCA3LjJaIiBmaWxsPSIjRTI1NzRDIi8+PHBhdGggZD0iTTUxLjcgODMuOXYtNy4ybC0xOS45IDUuN3MxLjUtOC42IDExLjktMTEuNWMzLjItLjkgNS44LS45IDguMS0uNVY0MWgxMGMtMS4xLTMuNC0yLjEtNS45LTMtNy43IC0xLjUtMy0zLTEtNi40IDEuOCAtMi40IDItOC40IDYuMy0xNy42IDguNyAtOS4xIDIuNS0xNi41IDEuOC0xOS42IDEuMyAtNC40LS44LTYuNi0xLjctNi40IDEuNiAuMiAyLjkuOSA3LjUgMi41IDEzLjQgMy41IDEzIDE0LjkgMzcuOSAzNi40IDMyLjEgNS42LTEuNSA5LjYtNC41IDEyLjQtOC4zaC04LjN2MFptLTMyLjItMjMuNiAxNS4zLTRzLS40IDUuOS02LjIgNy40Yy01LjcgMS41LTkuMS0zLjQtOS4xLTMuNFoiIGZpbGw9IiNFNjU3NEMiLz48cGF0aCBkPSJtNzIuMSA4Ni4xIC0uNi0uMWMtMTMuMS0zLjgtMTUuMi0xNC4zLTE1LjItMTQuM2wxOC4yIDUuMUw4NC4yIDM5LjhsLS4xIDBjLTExLjgtMy4yLTE5LjYtOC43LTIyLjctMTEuMyAtNC40LTMuNy02LjMtNi4yLTguMi0yLjQgLTEuNyAzLjQtMy44IDktNS45IDE2LjggLTQuNSAxNi45LTcuOSA1Mi40IDIwIDU5LjlsLjYuMSA0LjQtMTYuN1oiIGZpbGw9IiMxRDhEMjIiLz48cGF0aCBkPSJtNDUuNCA3OC41IC0zLjUgMWMuOCA0LjYgMi4zIDkuMSA0LjUgMTMuLjQtLjEuOC0uMiAxLjItLjNhMjUuMiAyNS4yIDAgMCAwIDMtMWMtMi41LTMuOC00LjItOC4xLTUuMi0xMi43Wm0tMS40LTMyLjZjLTEuOCA2LjctMy40IDE2LjMtMi45IDI1LjlhMjAuMSAyMC4xIDAgMCAxIDIuNS0uOWwuNi0uMWMtLjgtMTAuMy45LTIwLjggMi44LTI3LjlhMTM5LjQgMTM5LjQgMCAwIDEgMS41LTUgNDUuMiA0NS4yIDAgMCAxLTIuNiAxLjUgMTMyLjIgMTMyLjIgMCAwIDAtMS45IDYuNloiIGZpbGw9IiNDMDRCNDEiLz48cGF0aCBkPSJtNzIuMSA4Ni4xIC0uNi0uMWMtMTMuMS0zLjgtMTUuMi0xNC4zLTE1LjItMTQuM2wxOC4yIDUuMUw4NC4yIDM5LjhsLS4xIDBjLTExLjgtMy4yLTE5LjYtOC43LTIyLjctMTEuMyAtNC40LTMuNy02LjMtNi4yLTguMi0yLjQgLTEuNyAzLjQtMy44IDktNS45IDE2LjggLTQuNSAxNi45LTcuOSA1Mi40IDIwIDU5LjlsLjYuMSA0LjQtMTYuN1oiIGZpbGw9IiMxRDhEMjIiLz48L3N2Zz4=&style=for-the-badge&logoColor=white&logoSize=auto">
+	<img src="https://img.shields.io/badge/-Playwright-DCDCDC.svg?style=for-the-badge&logo=data:image/svg%2Bxml;base64,PHN2ZyB2aWV3Qm94PSI2LjAzIDIyLjkgMTEzLjA3IDg1LjMzIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik00My43IDcwLjljLTQuMSAxLjItNi44IDMuMi04LjYgNS4zIDEuNy0xLjUgNC0yLjkgNy4xLTMuNyAzLjItLjkgNS44LS45IDguMS0uNXYtMS43Yy0xLjktLjItNC4xIDAtNi41LjdaTTM0LjkgNTYuM2wtMTUuMyA0cy4zLjQuOC45bDEzLTMuNHMtLjIgMi40LTEuOCA0LjVjMy0yLjMgMy4zLTYgMy4zLTZabTEyLjggMzZDMjYuMSA5OC4xIDE0LjcgNzMuMSAxMS4zIDYwLjEgOS43IDU0LjIgOSA0OS42IDguOCA0Ni43YTUgNSAwIDAgMSAwLS44Yy0xLjEuMS0xLjcuNi0xLjUgMi4zIC4yIDIuOS45IDcuNSAyLjUgMTMuNCAzLjUgMTMgMTQuOSAzNy45IDM2LjQgMzIuMSA0LjctMS4zIDguMi0zLjYgMTAuOS02LjUgLTIuNCAyLjItNS41IDMuOS05LjMgNVptNC01MS4zdjEuNWg4LjVjLS4yLS41LS4zLTEtLjUtMS41aC03LjlaIiBmaWxsPSIjMkQ0NTUyIi8%2BPHBhdGggZD0iTTYyLjEgNTMuNmMzLjggMS4xIDUuOCAzLjcgNi45IDYuMWw0LjIgMS4ycy0uNi04LjMtOC0xMC40Yy03LTItMTEuMyAzLjktMTEuOCA0LjYgMi0xLjQgNS0yLjYgOC43LTEuNlptMzMuNyA2LjFjLTctMi0xMS4zIDMuOS0xMS44IDQuNiAyLTEuNCA1LTIuNiA4LjctMS42IDMuOCAxLjEgNS44IDMuNyA2LjkgNi4xbDQuMiAxLjJzLS42LTguMy04LTEwLjRabS00LjIgMjEuOCAtMzUuMy05LjlzLjQgMS45IDEuOCA0LjRsMjkuNyA4LjNjMi40LTEuNCAzLjctMi45IDMuNy0yLjlabS0yNC40IDIxLjJjLTI3LjktNy41LTI0LjUtNDMuMS0yMC01OS45IDEuOS02LjkgMy44LTEyLjEgNS40LTE1LjYgLS45LS4yLTEuNy4zLTIuNSAxLjkgLTEuNyAzLjQtMy44IDktNS45IDE2LjggLTQuNSAxNi45LTcuOSA1Mi40IDIwIDU5LjkgMTMuMiAzLjUgMjMuNC0xLjggMzEuMS0xMC4yIC03LjMgNi42LTE2LjUgMTAuMy0yOCA3LjJaIiBmaWxsPSIjMkQ0NTUyIi8%2BPHBhdGggZD0iTTUxLjcgODMuOXYtNy4ybC0xOS45IDUuN3MxLjUtOC42IDExLjktMTEuNWMzLjItLjkgNS44LS45IDguMS0uNVY0MWgxMGMtMS4xLTMuNC0yLjEtNS45LTMtNy43IC0xLjUtMy0zLTEtNi40IDEuOCAtMi40IDItOC40IDYuMy0xNy42IDguNyAtOS4xIDIuNS0xNi41IDEuOC0xOS42IDEuMyAtNC40LS44LTYuNi0xLjctNi40IDEuNiAuMiAyLjkuOSA3LjUgMi41IDEzLjQgMy41IDEzIDE0LjkgMzcuOSAzNi40IDMyLjEgNS42LTEuNSA5LjYtNC41IDEyLjQtOC4zaC04LjN2MFptLTMyLjItMjMuNiAxNS4zLTRzLS40IDUuOS02LjIgNy40Yy01LjcgMS41LTkuMS0zLjQtOS4xLTMuNFoiIGZpbGw9IiNFMjU3NEMiLz48cGF0aCBkPSJNMTA5LjQgNDEuM2MtNCAuNy0xMy41IDEuNi0yNS4zLTEuNiAtMTEuOC0zLjItMTkuNi04LjctMjIuNy0xMS4zIC00LjQtMy43LTYuMy02LjItOC4yLTIuNCAtMS43IDMuNC0zLjggOS01LjkgMTYuOCAtNC41IDE2LjktNy45IDUyLjQgMjAgNTkuOSAyNy45IDcuNSA0Mi44LTI1IDQ3LjMtNDEuOSAyLjEtNy44IDMtMTMuNyAzLjItMTcuNSAuMy00LjMtMi43LTMuMS04LjMtMi4xWk01My4zIDU1LjNzNC40LTYuOCAxMS45LTQuN2M3LjUgMi4xIDggMTAuNCA4IDEwLjRMNTMuMyA1NS4zWm0xOC4yIDMwLjdjLTEzLjEtMy44LTE1LjItMTQuMy0xNS4yLTE0LjNsMzUuMyA5LjljMCAwLTcuMSA4LjItMjAuMSA0LjVabTEyLjUtMjEuNXM0LjQtNi44IDExLjktNC43YzcuNSAyLjEgOCAxMC40IDggMTAuNGwtMTkuOS01LjdaIiBmaWxsPSIjMkVBRDMzIi8%2BPHBhdGggZD0iTTQ0LjggNzguNyAzMS44IDgyLjRzMS40LTggMTEtMTEuMmwtNy4zLTI3LjYgLS42LjJjLTkuMSAyLjUtMTYuNSAxLjgtMTkuNiAxLjMgLTQuNC0uOC02LjYtMS43LTYuNCAxLjYgLjIgMi45LjkgNy41IDIuNSAxMy40IDMuNSAxMyAxNC45IDM3LjkgMzYuNCAzMi4xbC42LS4yIC0zLjYtMTMuM1pNMTkuNSA2MC4zbDE1LjMtNHMtLjQgNS45LTYuMiA3LjRjLTUuNyAxLjUtOS4xLTMuNC05LjEtMy40WiIgZmlsbD0iI0Q2NTM0OCIvPjxwYXRoIGQ9Im03Mi4xIDg2LjEgLS42LS4xYy0xMy4xLTMuOC0xNS4yLTE0LjMtMTUuMi0xNC4zbDE4LjIgNS4xTDg0LjIgMzkuOGwtLjEgMGMtMTEuOC0zLjItMTkuNi04LjctMjIuNy0xMS4zIC00LjQtMy43LTYuMy02LjItOC4yLTIuNCAtMS43IDMuNC0zLjggOS01LjkgMTYuOCAtNC41IDE2LjktNy45IDUyLjQgMjAgNTkuOWwuNi4xIDQuNC0xNi43Wm0tMTguOC0zMC45czQuNC02LjggMTEuOS00LjdjNy41IDIuMSA4IDEwLjQgOCAxMC40bC0xOS45LTUuN1oiIGZpbGw9IiMxRDhEMjIiLz48cGF0aCBkPSJtNDUuNCA3OC41IC0zLjUgMWMuOCA0LjYgMi4zIDkuMSA0LjUgMTMgLjQtLjEuOC0uMiAxLjItLjNhMjUuMiAyNS4yIDAgMCAwIDMtMWMtMi41LTMuOC00LjItOC4xLTUuMi0xMi43Wm0tMS40LTMyLjZjLTEuOCA2LjctMy40IDE2LjMtMi45IDI1LjlhMjAuMSAyMC4xIDAgMCAxIDIuNS0uOWwuNi0uMWMtLjgtMTAuMy45LTIwLjggMi44LTI3LjlhMTM5LjQgMTM5LjQgMCAwIDEgMS41LTUgNDUuMiA0NS4yIDAgMCAxLTIuNiAxLjUgMTMyLjIgMTMyLjIgMCAwIDAtMS45IDYuNloiIGZpbGw9IiNDMDRCNDEiLz48L3N2Zz4=&logoColor=white">
 	<img src="https://img.shields.io/badge/-Biome-60A5FA.svg?logo=biome&style=for-the-badge&logoColor=white">
 	<img src="https://img.shields.io/badge/-Drizzle_ORM-C5F74F.svg?logo=drizzle&style=for-the-badge&logoColor=000000">
 	<img src="https://img.shields.io/badge/-PostgreSQL-4169E1.svg?logo=postgresql&style=for-the-badge&logoColor=white">
@@ -40,6 +40,9 @@
 - **体重を反映**：体重を変えると，通信せずにその場で計算し直します．
 - **ルートの保存**：名前を付けて保存し，一覧からいつでも表示・削除できます．ログインしなければブラウザに，ログインするとクラウド（Postgres）に保存します．
 - **ログイン**：メールアドレスとパスワードで登録・ログインできます．ブラウザに保存していたルートは，ログイン後にまとめてアカウントへ取り込めます．
+- **みんなのルート**：公開されたルートを地図で探せます（`/explore`）．地図に見えている範囲と重なるルートを，距離・坂のきつさで絞り込み，新しい順・いいね順で並べます．
+- **いいね・コメント・自分用に保存**：公開ルートにいいねやコメントができ，気に入ったルートは自分の保存済みに複製できます．利用者ごとの公開ページ（`/u/[id]`）もあります．
+- **通報**：不適切なルートやコメントは通報でき，3件集まると自動で非表示になります（管理画面の代わり）．
 - **URL で共有**：保存したルートを「共有中」にすると，`/r/[id]` の URL でログインしていない人も見られます．見る人の体重で消費カロリーを計算し直します．
 - **利用回数の制限**：経路計算と地名検索は，IP ごと・アプリ全体の回数を数え，外部 API の無料枠を使い切られないようにしています．
 - **和風モダンのデザイン**：生成り・墨・藍・朱の配色，明朝体の数字，青海波の文様．暗い表示にも対応します．
@@ -96,7 +99,8 @@ API キーと DB の接続情報はサーバー側の Route Handler でのみ使
 | テーブル | 内容 |
 |---|---|
 | `user`，`session`，`account`，`verification`，`rate_limit` | ログイン用（better-auth の CLI で生成） |
-| `routes` | 保存したルート（座標・断面図用の標高・統計・共有の有無） |
+| `routes` | 保存したルート（座標・断面図用の標高・統計・共有の有無．検索用に範囲・距離・獲得標高・いいね数も列に持つ） |
+| `route_likes`，`route_comments`，`reports` | いいね・コメント・通報 |
 | `api_usage` | API の利用回数（キーと時間の窓ごと） |
 
 設計の詳細は [`docs/db-phase.md`](docs/db-phase.md) にあります．
@@ -106,15 +110,21 @@ API キーと DB の接続情報はサーバー側の Route Handler でのみ使
 ```
 app/
   page.tsx                  トップページ
-  r/[id]/page.tsx           ルートの共有ページ
+  r/[id]/page.tsx           ルートの共有ページ（いいね・コメント・自分用に保存・通報）
+  explore/page.tsx          みんなのルート
+  u/[id]/page.tsx           利用者の公開ページ
   api/plan/route.ts         経路と標高を返す API
   api/round-trip/route.ts   周回ルート（逆算モード）の API
   api/geocode/route.ts      地名検索の API
   api/auth/[...all]/        ログインの API（better-auth）
-  api/routes/               保存ルートの API（一覧・保存・取り込み・共有の切り替え・削除）
+  api/routes/               保存ルートの API（一覧・保存・取り込み・共有の切り替え・削除・いいね・コメント・複製）
+  api/explore/route.ts      みんなのルートの検索 API
+  api/comments/，api/reports/   コメントの削除・通報の API
 components/
+  map/                      地図の共通部分（淡色地図・暗いモード・クレジット）
   planner/                  トップページの部品（地図，操作パネル，ログイン，統計，断面図，保存一覧など）
-  shared/                   共有ページの部品
+  explore/                  みんなのルートの部品
+  shared/                   共有ページの部品（いいね・コメントなど）
 db/                         テーブル定義（Drizzle）
 drizzle/                    マイグレーションの SQL（drizzle-kit で生成）
 lib/
@@ -161,13 +171,22 @@ Vercel では，Neon の連携（Marketplace）で `DATABASE_URL` などが自�
 | `npm run build` / `npm run start` | 本番ビルドと起動 |
 | `npm test` | Vitest でユニットテスト |
 | `npm run e2e` | Playwright で E2E テスト（API は差し替えるのでキー不要） |
-| `npm run api-test` | Bruno で API テスト（`bruno/`．開発サーバーを起動してから実行．ORS を4回分使い，作ったテスト用アカウントは最後に消す） |
+| `npm run api-test` | Bruno で API テスト（`bruno/`．開発サーバーを起動してから実行．ORS を4回分使い，みんなのルート・いいね・コメント・複製・通報も確かめ，作ったテスト用アカウントは最後に消す） |
 | `npm run lint` / `npm run format` | Biome でチェック・整形 |
 | `npm run typecheck` | ルートの型を生成（`next typegen`）してから TypeScript の型チェック |
 | `npm run db:generate` | テーブル定義の変更からマイグレーションの SQL を作る |
 | `npm run db:migrate` | マイグレーションを DB に適用する |
 | `npm run db:studio` | Drizzle Studio で DB の中身を見る |
 | `npm run vercel-build` | Vercel が使うビルド（マイグレーションを適用してからビルド） |
+
+## 無料枠で動かす工夫
+
+外部サービスはすべて無料枠で動かしています．
+
+- **公開ルートの閲覧は外部 API を使わない**：保存済みの座標を表示するだけなので，利用者や閲覧が増えても ORS の枠は減りません．枠を使うのはルートを作るときだけです．
+- **検索は索引で絞る**：ルートを囲む範囲（緯度・経度の最小と最大）を列に持ち，地図の表示範囲と重なるものを索引で探します．一覧で送る座標も間引いて通信量を抑えています．
+- **数え上げをしない**：いいね数・コメント数は増減のたびに列を更新し，一覧のたびに数えません．
+- **利用回数の制限**：経路計算・地名検索に加え，いいね・コメントなどの書き込みにも IP ごとの上限をかけています．
 
 ## CI
 

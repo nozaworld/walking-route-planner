@@ -36,6 +36,8 @@ script:post-response {
   // Set-Cookie から「名前=値」だけを取り出して，以降のリクエストで送る
   const cookies = [].concat(res.getHeader("set-cookie") || []);
   bru.setVar("cookie", cookies.map((c) => c.split(";")[0]).join("; "));
+  // 利用者のページ（/u/[id]）の確認に使う
+  bru.setVar("userId", res.body.user?.id);
 }
 
 tests {

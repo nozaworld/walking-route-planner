@@ -1,0 +1,32 @@
+meta {
+  name: みんなのルートで見つかる
+  type: http
+  seq: 10
+}
+
+docs {
+  共有にしたルートは，範囲が重なる「みんなのルート」の検索で見つかる．
+}
+
+get {
+  url: {{baseUrl}}/api/explore?w=136.8&s=35.1&e=137.0&n=35.3
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("共有したルートが入っている", function () {
+    const ids = res.body.routes.map((r) => r.id);
+    expect(ids).to.include(bru.getVar("routeId"));
+  });
+}

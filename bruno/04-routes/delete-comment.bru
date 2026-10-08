@@ -1,22 +1,23 @@
 meta {
-  name: 削除
+  name: コメントを消す
   type: http
-  seq: 20
+  seq: 18
 }
 
 docs {
-  保存したルートを削除する．
+  自分のコメントは消せる．
 }
 
 delete {
-  url: {{baseUrl}}/api/routes/{{routeId}}
+  url: {{baseUrl}}/api/comments/{{commentId}}
   body: none
   auth: none
 }
 
 headers {
-  Cookie: {{cookie}}
+  Content-Type: application/json
   Origin: {{baseUrl}}
+  Cookie: {{cookie}}
 }
 
 tests {

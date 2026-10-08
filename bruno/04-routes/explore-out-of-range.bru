@@ -1,0 +1,32 @@
+meta {
+  name: 範囲外では見つからない
+  type: http
+  seq: 11
+}
+
+docs {
+  東京の範囲で探しても，名古屋のルートは出ない．
+}
+
+get {
+  url: {{baseUrl}}/api/explore?w=139.6&s=35.6&e=139.8&n=35.8
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("共有したルートは入っていない", function () {
+    const ids = res.body.routes.map((r) => r.id);
+    expect(ids).to.not.include(bru.getVar("routeId"));
+  });
+}

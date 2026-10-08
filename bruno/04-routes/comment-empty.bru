@@ -1,0 +1,31 @@
+meta {
+  name: 空のコメント
+  type: http
+  seq: 15
+}
+
+docs {
+  空白だけのコメントは 400．
+}
+
+post {
+  url: {{baseUrl}}/api/routes/{{routeId}}/comments
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+body:json {
+  { "body": "   " }
+}
+
+tests {
+  test("400 を返す", function () {
+    expect(res.status).to.equal(400);
+  });
+}

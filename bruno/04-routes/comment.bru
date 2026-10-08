@@ -1,0 +1,35 @@
+meta {
+  name: コメントする
+  type: http
+  seq: 14
+}
+
+docs {
+  公開ルートにコメントを書く．
+}
+
+post {
+  url: {{baseUrl}}/api/routes/{{routeId}}/comments
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+body:json {
+  { "body": "坂がちょうどよかったです" }
+}
+
+script:post-response {
+  bru.setVar("commentId", res.body.comment?.id);
+}
+
+tests {
+  test("201 を返す", function () {
+    expect(res.status).to.equal(201);
+  });
+}

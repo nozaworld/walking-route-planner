@@ -1,0 +1,32 @@
+meta {
+  name: コメントの一覧
+  type: http
+  seq: 16
+}
+
+docs {
+  書いたコメントが自分のものとして返る．
+}
+
+get {
+  url: {{baseUrl}}/api/routes/{{routeId}}/comments
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("自分のコメントが1件ある", function () {
+    expect(res.body.comments.length).to.equal(1);
+    expect(res.body.comments[0].isMine).to.equal(true);
+  });
+}

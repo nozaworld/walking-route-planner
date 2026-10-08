@@ -1,0 +1,31 @@
+meta {
+  name: もう一度いいねしても増えない
+  type: http
+  seq: 13
+}
+
+docs {
+  同じ人が何度押しても，いいねは1つだけ．
+}
+
+post {
+  url: {{baseUrl}}/api/routes/{{routeId}}/like
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Origin: {{baseUrl}}
+  Cookie: {{cookie}}
+}
+
+tests {
+  test("200 を返す", function () {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("いいね数は1のまま", function () {
+    expect(res.body.likeCount).to.equal(1);
+  });
+}
