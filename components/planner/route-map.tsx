@@ -88,6 +88,8 @@ type Props = {
 	onMapClick: (p: LatLng) => void;
 	/** 地図を動かし終えるたびに中心の位置を伝える */
 	onCenterChange: (center: LatLng) => void;
+	/** 最初に表示する範囲をこのルートに合わせる（共有ページ用．省略すると名古屋付近） */
+	initialRoute?: LatLng[];
 };
 
 /** 緯度経度の配列を GeoJSON の線にする */
@@ -137,6 +139,16 @@ function visiblePadding(panelSize: PanelSize) {
 	return { top: 80, bottom: sheet + 16, left: 24, right: 24 };
 }
 
+/** 点列を囲む範囲を [[西, 南], [東, 北]] の形で返す */
+function boundsOf(points: LatLng[]): [[number, number], [number, number]] {
+	const lngs = points.map((p) => p.lng);
+	const lats = points.map((p) => p.lat);
+	return [
+		[Math.min(...lngs), Math.min(...lats)],
+		[Math.max(...lngs), Math.max(...lats)],
+	];
+}
+
 /** 地図本体．タイル・ルート・経由点・検索した場所を重ねて描く */
 export default function RouteMap({
 	waypoints,
@@ -147,6 +159,7 @@ export default function RouteMap({
 	drawing,
 	onMapClick,
 	onCenterChange,
+	initialRoute,
 }: Props) {
 	const mapRef = useRef<MapRef>(null);
 	const { resolvedTheme } = useTheme();
@@ -158,15 +171,10 @@ export default function RouteMap({
 	useEffect(() => {
 		const map = mapRef.current;
 		if (!map || !route || route.length < 2) return;
-		const lngs = route.map((p) => p.lng);
-		const lats = route.map((p) => p.lat);
-		map.fitBounds(
-			[
-				[Math.min(...lngs), Math.min(...lats)],
-				[Math.max(...lngs), Math.max(...lats)],
-			],
-			{ padding: visiblePadding(panelSize), duration: 1000 },
-		);
+		map.fitBounds(boundsOf(route), {
+			padding: visiblePadding(panelSize),
+			duration: 1000,
+		});
 	}, [fitKey]);
 
 	// 検索で場所を選んだら，その場所へなめらかに移動する
@@ -196,7 +204,14 @@ export default function RouteMap({
 	return (
 		<MapLibreMap
 			ref={mapRef}
-			initialViewState={INITIAL_VIEW}
+			initialViewState={
+				initialRoute && initialRoute.length >= 2
+					? {
+							bounds: boundsOf(initialRoute),
+							fitBoundsOptions: { padding: visiblePadding(panelSize) },
+						}
+					: INITIAL_VIEW
+			}
 			mapStyle={{ version: 8, sources: {}, layers: [] }}
 			style={{ position: "absolute", inset: 0 }}
 			maxZoom={19}
