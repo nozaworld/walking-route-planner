@@ -12,6 +12,7 @@ import { cache } from "react";
 import { SharedRoute } from "@/components/shared/shared-route";
 import { isRouteId } from "@/lib/server/api";
 import { auth } from "@/lib/server/auth";
+import { hasLiked } from "@/lib/server/community-repo";
 import { getRouteForView } from "@/lib/server/routes-repo";
 
 /**
@@ -21,9 +22,12 @@ import { getRouteForView } from "@/lib/server/routes-repo";
 const loadRoute = cache(async (id: string) => {
 	if (!isRouteId(id)) notFound();
 	const session = await auth.api.getSession({ headers: await headers() });
-	const route = await getRouteForView(id, session?.user.id ?? null);
+	const viewerId = session?.user.id ?? null;
+	const route = await getRouteForView(id, viewerId);
 	if (!route) notFound();
-	return route;
+	// 見ている人がいいね済みか（ボタンの初期状態に使う）
+	const liked = viewerId ? await hasLiked(id, viewerId) : false;
+	return { ...route, liked };
 });
 
 /** ページのタイトルと説明（共有したときのプレビューにも使われる） */

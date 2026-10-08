@@ -10,6 +10,7 @@ import { LockIcon, PencilLineIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AuthDialog } from "@/components/planner/auth-dialog";
 import { ElevationProfile } from "@/components/planner/elevation-profile";
 import { StatsSummary } from "@/components/planner/stats-summary";
 import { ThemeToggle } from "@/components/planner/theme-toggle";
@@ -20,6 +21,8 @@ import { gradeStops } from "@/lib/grade";
 import type { CloudRoute } from "@/lib/routes";
 import { loadWeight, type PanelSize } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import { CommentSection } from "./comment-section";
+import { RouteActions } from "./route-actions";
 
 // 地図（MapLibre）は window と WebGL に依存するので，ブラウザでのみ読み込む
 const RouteMap = dynamic(() => import("@/components/planner/route-map"), {
@@ -33,7 +36,13 @@ const DEFAULT_WEIGHT = 60;
 const PANEL: PanelSize = { width: 380, height: 50 };
 
 type Props = {
-	route: CloudRoute & { authorName: string; isOwner: boolean };
+	route: CloudRoute & {
+		authorId: string;
+		authorName: string;
+		isOwner: boolean;
+		likeCount: number;
+		liked: boolean;
+	};
 };
 
 /** 何もしない（地図のクリックや移動は共有ページでは使わない） */
@@ -42,6 +51,7 @@ function noop() {}
 /** 共有されたルートを表示する */
 export function SharedRoute({ route }: Props) {
 	const [weight, setWeight] = useState(DEFAULT_WEIGHT);
+	const [authOpen, setAuthOpen] = useState(false);
 	// 断面図でカーソルを合わせている地点（地図にも点で示す）
 	const [highlight, setHighlight] = useState<LatLng | null>(null);
 	// ルートの線を勾配で色分けするための，段階の切り替わり
@@ -122,8 +132,10 @@ export function SharedRoute({ route }: Props) {
 							{route.name}
 						</h1>
 						<p className="mt-1 text-muted-foreground text-xs">
-							{route.authorName} さんのルート ・{" "}
-							{new Date(route.savedAt).toLocaleDateString("ja-JP")}
+							<Link href={`/u/${route.authorId}`} className="hover:underline">
+								{route.authorName} さん
+							</Link>
+							のルート ・ {new Date(route.savedAt).toLocaleDateString("ja-JP")}
 						</p>
 					</div>
 
@@ -133,6 +145,14 @@ export function SharedRoute({ route }: Props) {
 							このルートは非公開です．あなただけが見られます．
 						</p>
 					)}
+
+					<RouteActions
+						routeId={route.id}
+						initialLiked={route.liked}
+						initialLikeCount={route.likeCount}
+						isOwner={route.isOwner}
+						onLoginRequired={() => setAuthOpen(true)}
+					/>
 
 					<StatsSummary stats={stats} />
 					<ElevationProfile
@@ -151,8 +171,14 @@ export function SharedRoute({ route }: Props) {
 						<PencilLineIcon />
 						自分でもルートを作る
 					</Link>
+
+					<CommentSection
+						routeId={route.id}
+						onLoginRequired={() => setAuthOpen(true)}
+					/>
 				</div>
 			</aside>
+			<AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
 		</main>
 	);
 }
