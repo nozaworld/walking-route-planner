@@ -246,6 +246,14 @@ export function Planner() {
 							</Alert>
 						)}
 
+						{/* 確定後は結果を先に見せる（スマホでは下のシートに収まる範囲が狭いため） */}
+						{stats && <StatsSummary stats={stats} />}
+						{plan && (
+							<ElevationProfile
+								points={plan.profile.points}
+								elevs={plan.profile.elevs}
+							/>
+						)}
 						<StepGuide
 							phase={phase}
 							waypointCount={waypoints.length}
@@ -256,14 +264,6 @@ export function Planner() {
 							onCancel={reset}
 							onSave={() => setSaveOpen(true)}
 						/>
-
-						{stats && <StatsSummary stats={stats} />}
-						{plan && (
-							<ElevationProfile
-								points={plan.profile.points}
-								elevs={plan.profile.elevs}
-							/>
-						)}
 					</TabsContent>
 
 					<TabsContent

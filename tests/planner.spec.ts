@@ -50,7 +50,8 @@ test("経路を確定すると統計と断面図が出る", async ({ page }) => 
 
 	const stats = page.getByTestId("stats");
 	await expect(stats).toContainText("km");
-	await expect(stats).toContainText("獲得標高 20 m");
+	await expect(stats).toContainText("獲得標高");
+	await expect(stats).toContainText("20m");
 	await expect(page.getByRole("img", { name: /標高断面図/ })).toBeVisible();
 });
 

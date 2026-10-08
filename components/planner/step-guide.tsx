@@ -2,6 +2,7 @@
  * ルートを作る手順の案内と，その段階で押すボタン．
  * 「一 出発地点 → 二 経由点 → 三 確定」のどこにいるかを示し，
  * 今できる操作だけを出す（旧版は4つのボタンが常に並んでいた）．
+ * ルートを確定した後は，統計が目に入るよう手順の一覧を畳んでボタンだけにする．
  */
 
 import {
@@ -79,7 +80,7 @@ export function StepGuide({
 
 	return (
 		<section aria-label="ルートを作る手順" className="space-y-4">
-			<ol className="space-y-3">
+			<ol className={cn("space-y-3", phase === "result" && "hidden")}>
 				{STEPS.map((s, i) => {
 					const state: StepState =
 						i < step ? "done" : i === step ? "current" : "todo";
