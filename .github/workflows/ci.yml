@@ -44,6 +44,10 @@ jobs:
     name: ビルド・E2E テスト
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # better-auth は本番モードでは秘密鍵が必須．CI では DB にもつながないので，ダミーの値でよい
+    env:
+      BETTER_AUTH_SECRET: ci-dummy-secret-not-used-for-anything-real
+      BETTER_AUTH_URL: http://localhost:3100
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
