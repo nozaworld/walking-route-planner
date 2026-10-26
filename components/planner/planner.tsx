@@ -4,6 +4,7 @@
  * ルート疲労度プランナーの画面全体．
  * 地図を画面いっぱいに広げ，操作パネルを PC では左に浮かせ，スマホでは下に置く．
  * ルートの作り方は2通り：地図をクリックして描く（draw）か，目標から周回ルートを作る（target，逆算モード）．
+ * どちらの作り方でも勾配の上限を選べ，守れなかったときは警告を出す．
  * 「描きはじめる → 地図をクリック → 確定」の流れを状態（Phase）で管理し，
  * 手順の案内・統計・断面図・保存済みルート・ログインをパネルの中に組み立てる．
  */
@@ -19,7 +20,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { buildSegments, computeStats } from "@/lib/energy-model";
 import type { LatLng } from "@/lib/geo";
 import type { Place } from "@/lib/geocode";
-import { gradeStops } from "@/lib/grade";
+import { gradeStops, maxGrade } from "@/lib/grade";
 import type { PlanErrorResponse, PlanResponse } from "@/lib/plan";
 import {
 	actualValue,
@@ -38,6 +39,7 @@ import {
 } from "@/lib/storage";
 import { AuthDialog } from "./auth-dialog";
 import { ElevationProfile } from "./elevation-profile";
+import { GradeLimitSelect } from "./grade-limit-select";
 import { PanelHeader } from "./panel-header";
 import { PlaceSearch } from "./place-search";
 import { ResizeHandle } from "./resize-handle";
@@ -72,16 +74,22 @@ const DEFAULT_TARGET: Record<TargetKind, string> = {
 	km: "3",
 };
 
-/** 周回ルートの API を呼ぶ */
+/** 周回ルートの API を呼ぶ．maxGrade が null なら勾配を制限しない */
 async function fetchRoundTrip(
 	start: LatLng,
 	length: number,
 	seed: number,
+	maxGrade: number | null,
 ): Promise<PlanResponse> {
 	const res = await fetch("/api/round-trip", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ start, length: Math.round(length), seed }),
+		body: JSON.stringify({
+			start,
+			length: Math.round(length),
+			seed,
+			maxGrade: maxGrade ?? undefined,
+		}),
 	});
 	const data = (await res.json()) as PlanResponse | PlanErrorResponse;
 	if ("error" in data) throw new Error(data.error);
@@ -90,6 +98,17 @@ async function fetchRoundTrip(
 
 /** パネルのタブ */
 type Tab = "plan" | "saved";
+
+/**
+ * 表示中のルートを作ったときの勾配の上限．
+ * alternatives は，別の道を探せたか（経由点を打って描いたルートは探せない）
+ */
+type AppliedLimit = { limit: number; alternatives: boolean };
+
+/** 勾配を % の表示にする（小数1桁） */
+function formatPercent(grade: number): string {
+	return `${(grade * 100).toFixed(1)}%`;
+}
 
 /** 画面全体のコンポーネント */
 export function Planner() {
@@ -117,6 +136,9 @@ export function Planner() {
 	const [mode, setMode] = useState<Mode>("draw");
 	const [targetKind, setTargetKind] = useState<TargetKind>("kcal");
 	const [targetInput, setTargetInput] = useState(DEFAULT_TARGET.kcal);
+	// 次に作るルートの勾配の上限（null は制限なし）と，表示中のルートを作ったときの上限
+	const [gradeLimit, setGradeLimit] = useState<number | null>(null);
+	const [appliedLimit, setAppliedLimit] = useState<AppliedLimit | null>(null);
 
 	// localStorage はサーバーでは読めないので，表示後に読み込む
 	useEffect(() => {
@@ -145,6 +167,13 @@ export function Planner() {
 		[plan],
 	);
 
+	// 勾配の上限を守れなかったときの，ルートの中で最も急な所の勾配（守れていれば null）
+	const overLimit = useMemo(() => {
+		if (!plan || !appliedLimit) return null;
+		const steepest = maxGrade(plan.profile.points, plan.profile.elevs);
+		return steepest > appliedLimit.limit ? steepest : null;
+	}, [plan, appliedLimit]);
+
 	/** すべてを最初の状態に戻す */
 	function reset() {
 		setPhase("idle");
@@ -152,6 +181,7 @@ export function Planner() {
 		setPlan(null);
 		setViewingId(null);
 		setError(null);
+		setAppliedLimit(null);
 	}
 
 	/** 描き直しを始める */
@@ -206,13 +236,16 @@ export function Planner() {
 		const seed = Math.floor(Math.random() * 1_000_000);
 		try {
 			let length = estimateLength(targetKind, target, weight);
-			let result = await fetchRoundTrip(start, length, seed);
+			let result = await fetchRoundTrip(start, length, seed, gradeLimit);
 			const first = actualValue(targetKind, statsOf(result));
 			if (needsCorrection(target, first)) {
 				length = correctLength(length, target, first);
-				result = await fetchRoundTrip(start, length, seed);
+				result = await fetchRoundTrip(start, length, seed, gradeLimit);
 			}
 			setPlan(result);
+			setAppliedLimit(
+				gradeLimit === null ? null : { limit: gradeLimit, alternatives: true },
+			);
 			setFitKey(`round-${Date.now()}`);
 			setPhase("result");
 		} catch (e) {
@@ -253,11 +286,20 @@ export function Planner() {
 			const res = await fetch("/api/plan", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ waypoints }),
+				body: JSON.stringify({
+					waypoints,
+					maxGrade: gradeLimit ?? undefined,
+				}),
 			});
 			const data = (await res.json()) as PlanResponse | PlanErrorResponse;
 			if ("error" in data) throw new Error(data.error);
 			setPlan(data);
+			// 別の道を探せるのは出発と到着の2点だけのとき（app/api/plan/route.ts）
+			setAppliedLimit(
+				gradeLimit === null
+					? null
+					: { limit: gradeLimit, alternatives: waypoints.length === 2 },
+			);
 			setFitKey(`plan-${Date.now()}`);
 			setPhase("result");
 		} catch (e) {
@@ -278,6 +320,7 @@ export function Planner() {
 		setViewingId(route.id);
 		setFitKey(route.id);
 		setError(null);
+		setAppliedLimit(null);
 		setPhase("result");
 		setTab("plan");
 	}
@@ -452,10 +495,27 @@ export function Planner() {
 								</div>
 							</div>
 
+							<GradeLimitSelect
+								value={gradeLimit}
+								onChange={setGradeLimit}
+								disabled={phase === "loading"}
+							/>
+
 							{error && (
 								<Alert variant="destructive">
 									<TriangleAlertIcon />
 									<AlertDescription>{error}</AlertDescription>
+								</Alert>
+							)}
+
+							{appliedLimit && overLimit !== null && (
+								<Alert>
+									<TriangleAlertIcon />
+									<AlertDescription>
+										{appliedLimit.alternatives
+											? `勾配${Math.round(appliedLimit.limit * 100)}%以内のルートが見つからなかったので，最も緩い候補を出しています（最も急な所 ${formatPercent(overLimit)}）．`
+											: `勾配${Math.round(appliedLimit.limit * 100)}%を超える所があります（最も急な所 ${formatPercent(overLimit)}）．経由点を打つと別の道を探せないため，出発と到着の2点だけで描くと緩い道を探します．`}
+									</AlertDescription>
 								</Alert>
 							)}
 

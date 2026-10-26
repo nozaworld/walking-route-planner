@@ -272,6 +272,36 @@ test("目標から周回ルートを作ると，目標と実際の値を並べ�
 	expect(calls).toBe(1);
 });
 
+test("坂の上限を選ぶと API に送り，守れなかったら警告を出す", async ({
+	page,
+}) => {
+	await stubNetwork(page, FAKE_PLAN);
+	// 約140m ごとに 20m 上る（約14%）急なルートを返し，送った本文を残す
+	const steep: PlanResponse = {
+		...FAKE_PLAN,
+		profile: {
+			...FAKE_PLAN.profile,
+			elevs: FAKE_PLAN.profile.elevs.map((_, i) => 10 + i * 20),
+		},
+	};
+	let body: { maxGrade?: number } = {};
+	await page.route("**/api/plan", (route) => {
+		body = route.request().postDataJSON();
+		return route.fulfill({ json: steep });
+	});
+
+	await page
+		.getByRole("radio", { name: "4%" })
+		.or(page.getByRole("button", { name: "4%" }))
+		.click();
+	await drawAndConfirm(page);
+
+	await expect(
+		page.getByText(/勾配4%以内のルートが見つからなかった/),
+	).toBeVisible();
+	expect(body.maxGrade).toBe(0.04);
+});
+
 test("みんなのルートで，地図の範囲の公開ルートを一覧し，選べる", async ({
 	page,
 }) => {

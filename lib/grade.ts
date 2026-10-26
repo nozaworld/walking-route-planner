@@ -2,6 +2,7 @@
  * 勾配の段階分け．
  * 断面図の点と標高から区間ごとの勾配を求め，「緩やか・やや急・急」の3段階に分ける．
  * 地図のルートの色分けと断面図の色分けで同じ基準を使う．
+ * ルートを提案するときに選べる勾配の上限と，ルートの最大勾配の計算もここに置く．
  */
 
 import { cumulativeDistances, type LatLng } from "./geo";
@@ -50,4 +51,23 @@ export function gradeStops(points: LatLng[], elevs: number[]): GradeStop[] {
 		}
 	}
 	return stops;
+}
+
+/** 画面で選べる勾配の上限（例：0.06 = 6%）．上りも下りも絶対値で比べる */
+export const GRADE_LIMITS = [0.04, 0.06, 0.08, 0.1] as const;
+
+/**
+ * 点と標高から，ルートの中で最も急な区間の勾配（絶対値）を求める．
+ * 区間の分け方は gradeStops と同じなので，色分けで「急」に見える区間と一致する．
+ */
+export function maxGrade(points: LatLng[], elevs: number[]): number {
+	const cum = cumulativeDistances(points);
+	let max = 0;
+	for (let i = 0; i < points.length - 1; i++) {
+		const dist = cum[i + 1] - cum[i];
+		if (dist > 0) {
+			max = Math.max(max, Math.abs(elevs[i + 1] - elevs[i]) / dist);
+		}
+	}
+	return max;
 }

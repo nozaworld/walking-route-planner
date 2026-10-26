@@ -14,9 +14,13 @@ const latLngSchema = z.object({
 	lng: z.number().min(-180).max(180),
 });
 
+/** 勾配の上限（例：0.06 = 6%）．省略すると制限しない */
+const maxGradeSchema = z.number().min(0.01).max(0.5).optional();
+
 /** リクエスト本文のスキーマ */
 export const planRequestSchema = z.object({
 	waypoints: z.array(latLngSchema).min(2).max(MAX_REQUEST_WAYPOINTS),
+	maxGrade: maxGradeSchema,
 });
 
 export type PlanRequest = z.infer<typeof planRequestSchema>;
@@ -29,6 +33,7 @@ export const roundTripRequestSchema = z.object({
 	start: latLngSchema,
 	length: z.number().min(ROUND_TRIP_LENGTH.min).max(ROUND_TRIP_LENGTH.max),
 	seed: z.number().int().min(0).max(1_000_000),
+	maxGrade: maxGradeSchema,
 });
 
 /** 成功時のレスポンス */

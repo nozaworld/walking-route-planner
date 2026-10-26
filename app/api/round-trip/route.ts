@@ -2,7 +2,8 @@
  * POST /api/round-trip：出発地点に戻ってくる周回ルートを作る API（逆算モード用）．
  * 指定された長さの周回ルートを ORS で作り，断面図用の標高を付けて返す．
  * 目標（消費カロリー・時間・距離）から長さへの換算と補正は，体重を使うので画面側で行う．
- * 経路計算と同じ利用回数の枠で数える．
+ * 勾配の上限（maxGrade）があれば，乱数の種を変えて何本か作り，上限を守るものを選ぶ．
+ * 経路計算と同じ利用回数の枠で，ORS を呼ぶ回数だけ数える．
  */
 
 import {
@@ -11,8 +12,11 @@ import {
 	roundTripRequestSchema,
 } from "@/lib/plan";
 import { RoutingError, roundTripOnFoot } from "@/lib/server/ors";
-import { withProfile } from "@/lib/server/profile";
+import { pickByGrade, withProfile } from "@/lib/server/profile";
 import { checkRateLimit, tooManyRequests } from "@/lib/server/rate-limit";
+
+/** 勾配の上限があるとき，周回ルートを作り直す最大の本数 */
+const GRADE_TRIES = 3;
 
 /** エラーを { error } の形で返す */
 function errorResponse(message: string, status: number) {
@@ -38,7 +42,20 @@ export async function POST(request: Request) {
 	if (!limit.ok) return tooManyRequests(limit);
 
 	try {
-		const { start, length, seed } = parsed.data;
+		const { start, length, seed, maxGrade } = parsed.data;
+		if (maxGrade !== undefined) {
+			// 乱数の種を変えて最大 GRADE_TRIES 本作り，上限を守るものを選ぶ．
+			// 2本目からは ORS を呼ぶたびに回数を数え，上限に達したらそれまでの候補から選ぶ
+			const candidates = Array.from(
+				{ length: GRADE_TRIES },
+				(_, i) => async () => {
+					if (i > 0 && !(await checkRateLimit("plan", request)).ok) return null;
+					return (await roundTripOnFoot(start, length, seed + i)).coords;
+				},
+			);
+			const plan = await pickByGrade(candidates, maxGrade);
+			return Response.json(plan satisfies PlanResponse);
+		}
 		const { coords } = await roundTripOnFoot(start, length, seed);
 		return Response.json((await withProfile(coords)) satisfies PlanResponse);
 	} catch (e) {

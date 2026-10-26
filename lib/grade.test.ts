@@ -2,7 +2,7 @@
  * lib/grade.ts のユニットテスト．
  */
 import { describe, expect, it } from "vitest";
-import { gradeLevel, gradeStops } from "./grade";
+import { gradeLevel, gradeStops, maxGrade } from "./grade";
 
 describe("gradeLevel", () => {
 	it("上りも下りも絶対値で3段階に分ける", () => {
@@ -28,5 +28,20 @@ describe("gradeStops", () => {
 
 	it("点が2つ未満なら空", () => {
 		expect(gradeStops(points.slice(0, 1), [0])).toEqual([]);
+	});
+});
+
+describe("maxGrade", () => {
+	// 北へ約111m ずつ進む3点
+	const points = [0, 1, 2].map((i) => ({ lat: 35 + i * 0.001, lng: 136 }));
+
+	it("最も急な区間の勾配を，下りも絶対値で返す", () => {
+		// 約111m で 3m 上り，そのあと 11m 下る（約10%）
+		expect(maxGrade(points, [10, 13, 2])).toBeCloseTo(11 / 111.2, 2);
+	});
+
+	it("平らなら0，点が1つでも0", () => {
+		expect(maxGrade(points, [5, 5, 5])).toBe(0);
+		expect(maxGrade(points.slice(0, 1), [5])).toBe(0);
 	});
 });

@@ -1,6 +1,7 @@
 /**
  * OpenRouteService（ORS）の経路探索 API を呼び出す．
  * 経由点を徒歩ルート（foot-walking）でつなぎ，ORS のエラーを画面向けのメッセージに変換する．
+ * 徒歩ルートには勾配を制限するオプションがないので，勾配の上限を守るときは代わりの経路を複数もらって選ぶ．
  * API キーを使うのでサーバー側からのみ呼ぶこと．
  */
 
@@ -11,6 +12,9 @@ const ORS_DIRECTIONS_URL =
 
 /** ORS の公開 API が1リクエストで受け付ける経由点の上限 */
 export const ORS_MAX_WAYPOINTS = 50;
+
+/** 代わりの経路を頼むときの本数（ORS の上限は3本） */
+const ALTERNATIVE_COUNT = 3;
 
 /** 経路探索の失敗．status はそのまま API のレスポンスに使う */
 export class RoutingError extends Error {
@@ -33,13 +37,24 @@ type OrsResponse = {
 	error?: { code?: number; message?: string } | string;
 };
 
-/**
- * ORS の徒歩ルートの API を呼び，経路の座標と距離を返す．
- * body は ORS にそのまま送る本文（座標は [経度, 緯度] の順）．
- */
+/** ORS が返す経路1本 */
+type FootRoute = { coords: LatLng[]; distance: number };
+
+/** ORS の徒歩ルートの API を呼び，最初の経路の座標と距離を返す */
 async function requestFootRoute(
 	body: Record<string, unknown>,
-): Promise<{ coords: LatLng[]; distance: number }> {
+): Promise<FootRoute> {
+	const [first] = await requestFootRoutes(body);
+	return first;
+}
+
+/**
+ * ORS の徒歩ルートの API を呼び，返ってきた経路をすべて返す（代わりの経路を頼んだときは複数）．
+ * body は ORS にそのまま送る本文（座標は [経度, 緯度] の順）．
+ */
+async function requestFootRoutes(
+	body: Record<string, unknown>,
+): Promise<FootRoute[]> {
 	const apiKey = process.env.ORS_API_KEY;
 	if (!apiKey) {
 		console.error("ORS_API_KEY が設定されていません");
@@ -57,15 +72,15 @@ async function requestFootRoute(
 	});
 	const data = (await res.json().catch(() => ({}))) as OrsResponse;
 
-	const feature = data.features?.[0];
-	if (!res.ok || !feature) {
+	const features = data.features ?? [];
+	if (!res.ok || features.length === 0) {
 		throw toRoutingError(res.status, data.error);
 	}
 
-	return {
+	return features.map((feature) => ({
 		coords: feature.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })),
 		distance: feature.properties.summary.distance ?? 0,
-	};
+	}));
 }
 
 /**
@@ -76,6 +91,25 @@ async function requestFootRoute(
 export function routeOnFoot(waypoints: LatLng[]) {
 	return requestFootRoute({
 		coordinates: waypoints.map((p) => [p.lng, p.lat]),
+	});
+}
+
+/**
+ * 2点の間の徒歩ルートを，最大 ALTERNATIVE_COUNT 本の候補として返す（勾配の上限を守る経路を選ぶため）．
+ * ORS の代わりの経路は経由点が2点のときしか使えない．1回のリクエストで済む．
+ */
+export function routeAlternativesOnFoot(from: LatLng, to: LatLng) {
+	return requestFootRoutes({
+		coordinates: [
+			[from.lng, from.lat],
+			[to.lng, to.lat],
+		],
+		// share_factor：候補どうしが重なってよい割合，weight_factor：最短に比べて遠回りしてよい倍率
+		alternative_routes: {
+			target_count: ALTERNATIVE_COUNT,
+			share_factor: 0.6,
+			weight_factor: 1.6,
+		},
 	});
 }
 
